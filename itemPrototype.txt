@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Tech Demo - Field Object System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f0f12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+        }
+
+        canvas {
+            display: block;
+            background-color: #16161a;
+            cursor: crosshair;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .top-status {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 18px;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            z-index: 10;
+            display: none;
+        }
+
+        .key-hint {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #settings-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 260px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 8px;
+            color: #eee;
+            font-size: 12px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        #settings-panel::-webkit-scrollbar { width: 6px; }
+        #settings-panel::-webkit-scrollbar-track { background: #111; }
+        #settings-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        .setting-group {
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 5px;
+        }
+
+        .setting-group h3 {
+            margin: 0 0 5px 0;
+            color: #00f3ff;
+            font-size: 14px;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .input-row label {
+            color: #aaa;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            background: #111;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        select {
+            display: block; 
+            width: 100%;
+            background: #111;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 4px;
+            border-radius: 3px;
+            margin-bottom: 10px; 
+            font-size: 12px;
+        }
+
+        #group-healpack, #group-star, #group-player-status, #group-rocket-attack {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #444; 
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #debug-info {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #00f3ff;
+            opacity: 0.8;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="aim-status" class="top-status">&lt; Using Active Item &gt;</div>
+
+        <div class="ui-overlay">
+            <div>
+                操作: <span class="key-hint">W</span><span class="key-hint">A</span><span class="key-hint">S</span><span class="key-hint">D</span> 移動 | 
+                <span class="key-hint">L-Click</span> 射擊 |
+                <span class="key-hint">F</span> 道具模式 | 
+                <span class="key-hint">R</span> 生成被動道具 |
+                <span class="key-hint">中鍵</span> 拖移 (Shift+中鍵 複製)
+            </div>
+            <div id="debug-info">Loading stats...</div>
+            <div style="font-size: 12px; color: #555;">Tech Demo v4.3 | Fix Syntax Error</div>
+        </div>
+
+        <div id="settings-panel">
+            <!-- 1. Player Settings -->
+            <div class="setting-group">
+                <h3>Player Settings</h3>
+                <select id="sel-player-settings">
+                    <option value="PlayerStatus">Player Status</option>
+                    <option value="RocketAttack">Rocket Attack</option>
+                </select>
+
+                <!-- Sub-group: Player Status -->
+                <div id="group-player-status">
+                    <div class="input-row">
+                        <label>Max Player HP</label>
+                        <input type="number" id="inp-player-hp" value="250">
+                    </div>
+                </div>
+
+                <!-- Sub-group: Rocket Attack -->
+                <div id="group-rocket-attack" class="hidden">
+                    <div class="input-row">
+                        <label>Speed (px/s)</label>
+                        <input type="number" id="inp-rocket-speed" value="600">
+                    </div>
+                    <div class="input-row">
+                        <label>Damage</label>
+                        <input type="number" id="inp-rocket-dmg" value="15">
+                    </div>
+                    <div class="input-row">
+                        <label>Radius (px)</label>
+                        <input type="number" id="inp-rocket-rad" value="60">
+                    </div>
+                    <div class="input-row">
+                        <label>Lifetime (s)</label>
+                        <input type="number" id="inp-rocket-life" value="4">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. General Settings (Traps) -->
+            <div class="setting-group">
+                <h3>General Settings</h3>
+                <div class="input-row">
+                    <label>Fire Dmg</label>
+                    <input type="number" id="inp-fire-dmg" value="50">
+                </div>
+                <div class="input-row">
+                    <label>Fire Rate (s)</label>
+                    <input type="number" id="inp-fire-rate" value="0.7" step="0.1">
+                </div>
+            </div>
+
+            <!-- 3. Active: HealBox -->
+            <div class="setting-group">
+                <h3>Active: HealBox</h3>
+                <div class="input-row">
+                    <label>Max Aim Radius</label>
+                    <input type="number" id="inp-aim-radius" value="200">
+                </div>
+                <div class="input-row">
+                    <label>Tick Counts</label>
+                    <input type="number" id="inp-heal-counts" value="5" step="1">
+                </div>
+                <div class="input-row">
+                    <label>Radius (px)</label>
+                    <input type="number" id="inp-heal-rad" value="170">
+                </div>
+                <div class="input-row">
+                    <label>Heal Value</label>
+                    <input type="number" id="inp-heal-val" value="25">
+                </div>
+                <div class="input-row">
+                    <label>Tick Rate (s)</label>
+                    <input type="number" id="inp-heal-tick" value="1" step="0.1">
+                </div>
+            </div>
+
+            <!-- 4. Passive Item -->
+            <div class="setting-group">
+                <h3>Passive Item</h3>
+                <select id="sel-passive-type">
+                    <option value="HealPack">HealPack (補血包)</option>
+                    <option value="InvincibleStar">InvincibleStar (無敵星)</option>
+                </select>
+
+                <!-- HealPack Settings -->
+                <div id="group-healpack">
+                    <div class="input-row">
+                        <label>Duration (s)</label>
+                        <input type="number" id="inp-pack-dur" value="10" step="1" title="-1 for infinite">
+                    </div>
+                    <div class="input-row">
+                        <label>Heal Value</label>
+                        <input type="number" id="inp-pack-val" value="30">
+                    </div>
+                </div>
+
+                <!-- InvincibleStar Settings -->
+                <div id="group-star" class="hidden">
+                    <div class="input-row">
+                        <label>Duration (s)</label>
+                        <input type="number" id="inp-star-dur" value="10" step="1" title="-1 for infinite">
+                    </div>
+                    <div class="input-row">
+                        <label>Buff Time (s)</label>
+                        <input type="number" id="inp-star-effect" value="10" step="0.5">
+                    </div>
+                    <div class="input-row">
+                        <label>Def Ratio</label>
+                        <input type="number" id="inp-star-def" value="0" step="0.1" title="0 = No Damage">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心變數與設定 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+        const debugInfoElement = document.getElementById('debug-info');
+        const aimStatusElement = document.getElementById('aim-status');
+
+        // 輸入元素
+        const inputs = {
+            // Player Settings Dropdown
+            playerSettingsSelect: document.getElementById('sel-player-settings'),
+            groupPlayerStatus: document.getElementById('group-player-status'),
+            groupRocketAttack: document.getElementById('group-rocket-attack'),
+
+            // Player Status
+            maxHP: document.getElementById('inp-player-hp'),
+
+            // Rocket Attack
+            rocketSpeed: document.getElementById('inp-rocket-speed'),
+            rocketDmg: document.getElementById('inp-rocket-dmg'),
+            rocketRad: document.getElementById('inp-rocket-rad'),
+            rocketLife: document.getElementById('inp-rocket-life'),
+
+            // General (Traps)
+            fireDmg: document.getElementById('inp-fire-dmg'),
+            fireRate: document.getElementById('inp-fire-rate'),
+            
+            // Active: HealBox
+            aimRadius: document.getElementById('inp-aim-radius'),
+            healCounts: document.getElementById('inp-heal-counts'),
+            healRad: document.getElementById('inp-heal-rad'),
+            healVal: document.getElementById('inp-heal-val'),
+            healTick: document.getElementById('inp-heal-tick'),
+            
+            // Passive Dropdown
+            passiveSelect: document.getElementById('sel-passive-type'),
+            
+            // HealPack
+            packGroup: document.getElementById('group-healpack'),
+            packDur: document.getElementById('inp-pack-dur'),
+            packVal: document.getElementById('inp-pack-val'),
+
+            // Star
+            starGroup: document.getElementById('group-star'),
+            starDur: document.getElementById('inp-star-dur'),
+            starEffect: document.getElementById('inp-star-effect'),
+            starDef: document.getElementById('inp-star-def'),
+        };
+
+        const GAME_STATE = { ROAMING: 0, AIMING: 1 };
+        let currentState = GAME_STATE.ROAMING;
+        let currentPassiveType = 'HealPack'; 
+        let currentPlayerSettingType = 'PlayerStatus';
+
+        const EDITOR_STATE = {
+            draggingObj: null, 
+            dragOffsetX: 0,
+            dragOffsetY: 0
+        };
+
+        const SETTINGS = {
+            aspectRatio: 16 / 9,
+            playerSpeed: 300,
+            rotationSpeed: 15,
+            playerSize: 20,
+            gridSize: 50,
+            aimIndicatorRadius: 8,
+            colors: {
+                bg: '#16161a',
+                grid: '#23232a',
+                player: '#00f3ff',
+                playerShadow: 'rgba(0, 243, 255, 0.6)',
+                obstacle: '#2d2d35',
+                obstacleBorder: '#4a4a55',
+                aimRange: 'rgba(50, 255, 100, 0.6)', 
+                aimValid: '#00ff00',
+                aimInvalid: '#ff0000',
+                healBox: '#00ff00',
+                healRange: 'rgba(0, 255, 0, 0.2)',
+                healPack: '#ffffff', 
+                healPackBase: '#00aa00',
+                star: '#ffd700', 
+                starGlow: 'rgba(255, 215, 0, 0.6)',
+                shield: 'rgba(255, 215, 0, 0.3)',
+                shieldBorder: '#ffd700',
+                buffShield: '#00f3ff', 
+                buffBorder: '#00f3ff',
+                textHeal: '#00ff00',
+                textDmg: '#ff3333', 
+                shadow: 'rgba(0, 0, 0, 0.5)',
+                fireTrap: 'rgba(255, 60, 0, 0.3)',
+                rocket: '#ffaa00',
+                rocketExplosion: 'rgba(255, 100, 0, 0.8)'
+            },
+            
+            general: { 
+                maxPlayerHP: 250, 
+                fireTrapDmg: 50, 
+                fireTrapTick: 0.7 
+            },
+            
+            attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4 },
+
+            itemHealBox: { 
+                maxAimRadius: 200, 
+                counts: 5, 
+                radius: 170, 
+                value: 25, 
+                tick: 1 
+            },
+            itemHealPack: { duration: 10, value: 30 },
+            itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0 }
+        };
+
+        // --- UI Binding ---
+        inputs.playerSettingsSelect.addEventListener('change', (e) => {
+            currentPlayerSettingType = e.target.value;
+            if (currentPlayerSettingType === 'PlayerStatus') {
+                inputs.groupPlayerStatus.classList.remove('hidden');
+                inputs.groupRocketAttack.classList.add('hidden');
+            } else if (currentPlayerSettingType === 'RocketAttack') {
+                inputs.groupPlayerStatus.classList.add('hidden');
+                inputs.groupRocketAttack.classList.remove('hidden');
+            }
+        });
+
+        inputs.maxHP.addEventListener('change', (e) => { SETTINGS.general.maxPlayerHP = Number(e.target.value); player.maxHp = SETTINGS.general.maxPlayerHP; if(player.currentHp > player.maxHp) player.currentHp = player.maxHp; });
+        inputs.rocketSpeed.addEventListener('change', (e) => SETTINGS.attackRocket.speed = Number(e.target.value));
+        inputs.rocketDmg.addEventListener('change', (e) => SETTINGS.attackRocket.damage = Number(e.target.value));
+        inputs.rocketRad.addEventListener('change', (e) => SETTINGS.attackRocket.radius = Number(e.target.value));
+        inputs.rocketLife.addEventListener('change', (e) => SETTINGS.attackRocket.lifetime = Number(e.target.value));
+        inputs.fireDmg.addEventListener('change', (e) => SETTINGS.general.fireTrapDmg = Number(e.target.value));
+        inputs.fireRate.addEventListener('change', (e) => SETTINGS.general.fireTrapTick = Number(e.target.value));
+        inputs.aimRadius.addEventListener('change', (e) => SETTINGS.itemHealBox.maxAimRadius = Number(e.target.value));
+        inputs.healCounts.addEventListener('change', (e) => SETTINGS.itemHealBox.counts = Math.max(1, parseInt(e.target.value)));
+        inputs.healRad.addEventListener('change', (e) => SETTINGS.itemHealBox.radius = Number(e.target.value));
+        inputs.healVal.addEventListener('change', (e) => SETTINGS.itemHealBox.value = Number(e.target.value));
+        inputs.healTick.addEventListener('change', (e) => SETTINGS.itemHealBox.tick = Number(e.target.value));
+        inputs.passiveSelect.addEventListener('change', (e) => {
+            currentPassiveType = e.target.value;
+            if (currentPassiveType === 'HealPack') { inputs.packGroup.classList.remove('hidden'); inputs.starGroup.classList.add('hidden'); }
+            else if (currentPassiveType === 'InvincibleStar') { inputs.packGroup.classList.add('hidden'); inputs.starGroup.classList.remove('hidden'); }
+        });
+        inputs.packDur.addEventListener('change', (e) => SETTINGS.itemHealPack.duration = Number(e.target.value));
+        inputs.packVal.addEventListener('change', (e) => SETTINGS.itemHealPack.value = Number(e.target.value));
+        inputs.starDur.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.duration = Number(e.target.value));
+        inputs.starEffect.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.effectDuration = Number(e.target.value));
+        inputs.starDef.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.defendRatio = Number(e.target.value));
+
+        const keys = { w: false, a: false, s: false, d: false };
+        const mouse = { x: 0, y: 0, valid: false };
+
+        const player = {
+            x: 0, y: 0,
+            targetAngle: -Math.PI / 2,
+            currentAngle: -Math.PI / 2,
+            velocity: { x: 0, y: 0 },
+            trail: [],
+            maxHp: SETTINGS.general.maxPlayerHP,
+            currentHp: SETTINGS.general.maxPlayerHP,
+            damageShakeTimer: 0,
+            damageFlashTimer: 0,
+            invincibleTimer: 0, 
+            maxInvincibleTimer: 0,
+            defendRatio: 1 
+        };
+
+        // ID Generator System
+        const _idCounters = {};
+
+        function generateId(prefix) {
+            if (!_idCounters[prefix]) {
+                _idCounters[prefix] = 0;
+            }
+            return `${prefix}_${++_idCounters[prefix]}`;
+        }
+
+        // 場景物件與實體
+        let fieldObjects = []; 
+        let activeItems = [];
+        let projectiles = [];
+        let floatingTexts = [];
+        let particles = []; 
+
+        let lastTime = 0;
+        let width, height;
+
+        // --- 模組化 UI 繪圖函式 ---
+        function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') {
+            const halfSize = size / 2;
+            ctx.save(); ctx.translate(x, y); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(-halfSize, -halfSize, size, size);
+            if (type === 'SHIELD') { ctx.fillStyle = color; ctx.beginPath(); const s = size * 0.7; ctx.moveTo(0, s/2); ctx.lineTo(s/2, 0); ctx.lineTo(s/2, -s/4); ctx.lineTo(0, -s/2); ctx.lineTo(-s/2, -s/4); ctx.lineTo(-s/2, 0); ctx.closePath(); ctx.fill(); }
+            ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.beginPath();
+            const p = progress; const w = size; const h = size; const perimeter = 2 * w + 2 * h; const drawLength = perimeter * p; 
+            ctx.moveTo(0, -h/2); let remaining = drawLength;
+            const seg1 = w / 2; if (remaining > 0) { const draw = Math.min(remaining, seg1); ctx.lineTo(-draw, -h/2); remaining -= draw; }
+            const seg2 = h; if (remaining > 0) { const draw = Math.min(remaining, seg2); ctx.lineTo(-w/2, -h/2 + draw); remaining -= draw; }
+            const seg3 = w; if (remaining > 0) { const draw = Math.min(remaining, seg3); ctx.lineTo(-w/2 + draw, h/2); remaining -= draw; }
+            const seg4 = h; if (remaining > 0) { const draw = Math.min(remaining, seg4); ctx.lineTo(w/2, h/2 - draw); remaining -= draw; }
+            const seg5 = w / 2; if (remaining > 0) { const draw = Math.min(remaining, seg5); ctx.lineTo(w/2 - draw, -h/2); remaining -= draw; }
+            ctx.stroke(); ctx.restore();
+        }
+
+        // --- 攻擊模組函式 ---
+        function fireRocket(startX, startY, targetX, targetY) {
+            const angle = Math.atan2(targetY - startY, targetX - startX);
+            const rocket = new Rocket(startX, startY, angle);
+            projectiles.push(rocket);
+        }
+
+        // --- 場景物件類別 (FieldObject System Refactored) ---
+        class FieldObject {
+            constructor(x, y, w, h, typeName) {
+                this.x = x; 
+                this.y = y; 
+                this.width = w; 
+                this.height = h; 
+                this.type = typeName;
+                this.id = generateId(typeName);
+                
+                this.isSolid = false; 
+                this.damage = 0; 
+                this.isDragging = false; 
+                this.isValidPlacement = true; 
+            }
+            update(dt) {}
+            draw(ctx) { ctx.strokeStyle = '#fff'; ctx.strokeRect(this.x, this.y, this.width, this.height); }
+            contains(px, py) { return px >= this.x && px <= this.x + this.width && py >= this.y && py <= this.y + this.height; }
+            overlaps(other) { return this.x < other.x + other.width && this.x + this.width > other.x && this.y < other.y + other.height && this.y + this.height > other.y; }
+            setPosition(nx, ny) { const clampedX = Math.max(0, Math.min(width - this.width, nx)); const clampedY = Math.max(0, Math.min(height - this.height, ny)); this.x = clampedX; this.y = clampedY; }
+            
+            takeDamage(amount) {
+                const centerX = this.x + this.width / 2;
+                const centerY = this.y + this.height / 2;
+                floatingTexts.push(new FloatingText(centerX, centerY - 20, `-${amount}`, '#ffaa00'));
+            }
+        }
+
+        class Obstacle extends FieldObject {
+            constructor(x, y, size) {
+                super(x, y, size, size, "Obstacle");
+                this.isSolid = true;
+            }
+            draw(ctx) {
+                ctx.save();
+                if (this.isDragging) ctx.globalAlpha = 0.5;
+                ctx.fillStyle = SETTINGS.colors.obstacle;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = SETTINGS.colors.obstacleBorder;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+                ctx.beginPath(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'; ctx.lineWidth = 1; 
+                ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + this.width, this.y + this.height); 
+                ctx.moveTo(this.x + this.width, this.y); ctx.lineTo(this.x, this.y + this.height); ctx.stroke();
+                
+                if (this.isDragging) {
+                    ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.fillText(this.id, this.x + 2, this.y + 10);
+                }
+
+                if (this.isDragging && !this.isValidPlacement) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.strokeStyle = 'red'; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.width, this.height);
+                }
+                ctx.restore();
+            }
+        }
+
+        class FireTrap extends FieldObject {
+            constructor(x, y) {
+                super(x, y, 100, 100, "FireTrap");
+                this.damage = SETTINGS.general.fireTrapDmg; 
+                this.tickTimer = 0; 
+                this.flames = []; 
+                for(let i=0; i<15; i++) {
+                    this.flames.push({
+                        x: Math.random() * this.width,
+                        y: Math.random() * this.height,
+                        size: 5 + Math.random() * 15,
+                        speed: 20 + Math.random() * 40,
+                        offset: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            update(dt) {
+                this.damage = SETTINGS.general.fireTrapDmg; 
+                this.flames.forEach(f => { f.y -= f.speed * dt; f.size -= dt * 5; if (f.y < 0 || f.size <= 0) { f.y = this.height; f.x = Math.random() * this.width; f.size = 10 + Math.random() * 20; } }); 
+                if (this.isDragging) return; 
+                
+                const closestX = Math.max(this.x, Math.min(player.x, this.x + this.width)); 
+                const closestY = Math.max(this.y, Math.min(player.y, this.y + this.height)); 
+                const dx = player.x - closestX; 
+                const dy = player.y - closestY; 
+                const distSq = dx*dx + dy*dy; 
+                
+                if (distSq < (SETTINGS.playerSize * SETTINGS.playerSize)) { 
+                    this.tickTimer += dt; 
+                    if (this.tickTimer >= SETTINGS.general.fireTrapTick) { 
+                        this.tickTimer = 0; 
+                        takeDamage(this.damage); 
+                    } 
+                } else { 
+                    this.tickTimer = SETTINGS.general.fireTrapTick * 0.5; 
+                } 
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y); 
+                if (this.isDragging) ctx.globalAlpha = 0.5; 
+                ctx.fillStyle = SETTINGS.colors.fireTrap; ctx.fillRect(0, 0, this.width, this.height); 
+                ctx.strokeStyle = '#ff4400'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, this.width, this.height); 
+                ctx.globalCompositeOperation = 'screen'; 
+                this.flames.forEach(f => { const alpha = Math.min(1, f.size / 15); ctx.fillStyle = `rgba(255, ${Math.floor(Math.random()*150)}, 0, ${alpha})`; ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2); ctx.fill(); }); 
+                
+                if (this.isDragging) {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.fillText(this.id, 2, 10);
+                }
+
+                if (this.isDragging && !this.isValidPlacement) { ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; ctx.fillRect(0, 0, this.width, this.height); ctx.strokeStyle = 'red'; ctx.strokeRect(0, 0, this.width, this.height); } 
+                ctx.restore(); 
+            }
+        }
+
+        // --- 彈射物類別 ---
+        class Projectile {
+            constructor(x, y, angle, speed, lifetime) {
+                this.x = x; this.y = y; this.angle = angle; this.speed = speed; this.lifetime = lifetime;
+                this.isDead = false;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+            }
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.lifetime -= dt;
+                if (this.lifetime <= 0) this.isDead = true;
+            }
+            draw(ctx) {}
+        }
+
+        class Rocket extends Projectile {
+            constructor(x, y, angle) {
+                super(x, y, angle, SETTINGS.attackRocket.speed, SETTINGS.attackRocket.lifetime);
+                this.width = 16; this.height = 8; this.trailTimer = 0;
+            }
+
+            update(dt) {
+                super.update(dt);
+                this.trailTimer += dt;
+                if (this.trailTimer > 0.02) { 
+                    this.trailTimer = 0;
+                    const backX = this.x - Math.cos(this.angle) * 10;
+                    const backY = this.y - Math.sin(this.angle) * 10;
+                    particles.push(new Particle(backX, backY, 'smoke'));
+                }
+
+                const tipX = this.x + Math.cos(this.angle) * (this.width/2);
+                const tipY = this.y + Math.sin(this.angle) * (this.width/2);
+
+                for(let obj of fieldObjects) {
+                    if (obj.isSolid && obj.contains(tipX, tipY)) {
+                        this.explode();
+                        return; 
+                    }
+                }
+            }
+
+            explode() {
+                this.isDead = true;
+                const radius = SETTINGS.attackRocket.radius;
+                const damage = SETTINGS.attackRocket.damage;
+
+                for(let i=0; i<15; i++) {
+                    particles.push(new Particle(this.x, this.y, 'explosion'));
+                }
+                particles.push(new ExplosionWave(this.x, this.y, radius * 1.2)); 
+
+                for(let obj of fieldObjects) {
+                    if (obj.isSolid) {
+                        const closestX = Math.max(obj.x, Math.min(this.x, obj.x + obj.width));
+                        const closestY = Math.max(obj.y, Math.min(this.y, obj.y + obj.height));
+                        const dx = this.x - closestX;
+                        const dy = this.y - closestY;
+                        
+                        if ((dx*dx + dy*dy) < (radius * radius)) {
+                            obj.takeDamage(damage);
+                        }
+                    }
+                }
+            }
+
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+                ctx.fillStyle = SETTINGS.colors.rocket;
+                ctx.beginPath(); ctx.moveTo(this.width/2, 0); ctx.lineTo(-this.width/2, this.height/2); ctx.lineTo(-this.width/2 + 4, 0); ctx.lineTo(-this.width/2, -this.height/2); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.fillRect(-2, -2, 4, 4); 
+                ctx.restore();
+            }
+        }
+
+        // --- 視覺特效類別 ---
+        class ExplosionWave {
+            constructor(x, y, maxRadius) { this.x = x; this.y = y; this.radius = 5; this.maxRadius = maxRadius; this.life = 1.0; this.alpha = 1.0; }
+            update(dt) { this.radius += (this.maxRadius - this.radius) * 5 * dt; this.life -= dt * 2; this.alpha = Math.max(0, this.life); }
+            draw(ctx) { ctx.save(); ctx.globalAlpha = this.alpha; ctx.strokeStyle = SETTINGS.colors.rocketExplosion; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = 'rgba(255, 200, 100, 0.3)'; ctx.fill(); ctx.restore(); }
+        }
+
+        // --- 原有道具與粒子 ---
+        class FloatingText { constructor(x, y, text, color) { this.x = x; this.y = y; this.text = text; this.color = color; this.life = 1.0; this.speedY = 50; } update(dt) { this.y -= this.speedY * dt; this.life -= dt; } draw(ctx) { ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; ctx.font = "bold 24px Arial"; ctx.textAlign = "center"; ctx.fillText(this.text, this.x, this.y); ctx.restore(); } }
+        class Particle { constructor(x, y, type) { this.x = x + (Math.random() - 0.5) * 20; this.y = y + (Math.random() - 0.5) * 20; this.type = type || 'heal'; this.life = 0.5 + Math.random() * 0.5; if (type === 'smoke') { this.vx = (Math.random() - 0.5) * 20; this.vy = (Math.random() - 0.5) * 20; this.size = 3 + Math.random() * 3; this.color = '#aaaaaa'; this.life = 0.4; } else if (type === 'explosion') { const angle = Math.random() * Math.PI * 2; const speed = 50 + Math.random() * 100; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.size = 4 + Math.random() * 4; this.color = '#ffaa00'; } else if (type === 'damage') { this.vx = (Math.random() - 0.5) * 20; this.vy = -30 - Math.random() * 50; this.size = 4 + Math.random() * 4; this.color = '#ff4400'; } else { this.vx = (Math.random() - 0.5) * 20; this.vy = -60 - Math.random() * 60; this.size = 3 + Math.random() * 2; this.color = '#00ff00'; } } update(dt) { this.x += this.vx * dt; this.y += this.vy * dt; this.life -= dt; if (this.type === 'damage' || this.type === 'smoke') this.size += dt * 2; if (this.type === 'explosion') { this.vx *= 0.9; this.vy *= 0.9; } } draw(ctx) { ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; if (this.type === 'heal') { const s = this.size; const thick = s / 3; ctx.translate(this.x, this.y); ctx.fillRect(-s, -thick/2, s*2, thick); ctx.fillRect(-thick/2, -s, thick, s*2); } else { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); } ctx.restore(); } }
+        class ItemBase { constructor(x, y, duration) { this.x = x; this.y = y; this.duration = duration; this.lifeTimer = 0; this.isDead = false; this.z = 150; this.vz = 0; this.gravity = 2500; this.bounciness = 0.4; this.isGrounded = false; } update(dt) { if (this.duration !== -1) { this.lifeTimer += dt; if (this.lifeTimer >= this.duration) this.onDurationEnd(); } if (!this.isGrounded) { this.vz += this.gravity * dt; this.z -= this.vz * dt; if (this.z <= 0) { this.z = 0; this.vz = -this.vz * this.bounciness; if (Math.abs(this.vz) < 100) { this.vz = 0; this.isGrounded = true; } } } } onDurationEnd() { this.isDead = true; } spawnHealFX(value) { healPlayer(value); } drawShadow(ctx) { const shadowScale = Math.max(0.2, 1 - (this.z / 200)); const shadowAlpha = Math.max(0.1, 1 - (this.z / 200)) * 0.5; ctx.save(); ctx.translate(this.x, this.y); ctx.scale(shadowScale, shadowScale); ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } drawDurationBar(ctx, yOffset) { if (this.duration === -1) return; const lifePercent = Math.max(0, 1 - (this.lifeTimer / this.duration)); const barWidth = 24; const barHeight = 3; ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(-barWidth/2, yOffset, barWidth, barHeight); ctx.fillStyle = '#00ff00'; ctx.fillRect(-barWidth/2, yOffset, barWidth * lifePercent, barHeight); } }
+        class HealBox extends ItemBase { constructor(x, y) { const counts = SETTINGS.itemHealBox.counts; const tickRate = SETTINGS.itemHealBox.tick; super(x, y, counts * tickRate); this.category = 'ACTIVE'; this.radius = SETTINGS.itemHealBox.radius; this.healValue = SETTINGS.itemHealBox.value; this.tickRate = tickRate; this.maxTicks = counts; this.ticksPerformed = 0; this.tickTimer = 0; this.pulseTime = 0; this.pulseDuration = 0.5; } onDurationEnd() { if (this.pulseTime <= 0) this.isDead = true; } update(dt) { super.update(dt); if (this.pulseTime > 0) this.pulseTime -= dt; if (this.ticksPerformed < this.maxTicks) { this.tickTimer += dt; if (this.tickTimer >= this.tickRate) { this.tickTimer -= this.tickRate; this.triggerTick(); this.ticksPerformed++; } } if (this.pulseTime > 0 && this.duration !== -1 && this.lifeTimer >= this.duration) {} else if (this.duration !== -1 && this.lifeTimer >= this.duration) { this.isDead = true; } } triggerTick() { this.pulseTime = this.pulseDuration; const dx = player.x - this.x; const dy = player.y - this.y; const distSq = dx*dx + dy*dy; if (distSq <= this.radius * this.radius) { this.spawnHealFX(this.healValue); } } draw(ctx) { const landingProgress = 1 - Math.min(1, this.z / 150); let pulseAlpha = 0; if (this.pulseTime > 0) { const progress = 1 - (this.pulseTime / this.pulseDuration); pulseAlpha = (1 - progress) * 0.4; } ctx.save(); ctx.globalAlpha = Math.max(0.1, landingProgress); ctx.strokeStyle = SETTINGS.colors.healRange; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke(); if (this.pulseTime > 0) { ctx.fillStyle = `rgba(0, 255, 0, ${pulseAlpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = `rgba(0, 255, 0, ${pulseAlpha * 2})`; ctx.lineWidth = 4; ctx.beginPath(); const waveRadius = (this.radius * 0.3) + (this.radius * 0.7 * (1 - (this.pulseTime / this.pulseDuration))); ctx.arc(this.x, this.y, waveRadius, 0, Math.PI * 2); ctx.stroke(); } ctx.restore(); this.drawShadow(ctx); const drawY = this.y - this.z; const perspectiveScale = 1 + (this.z / 400); ctx.save(); ctx.translate(this.x, drawY); ctx.scale(perspectiveScale, perspectiveScale); ctx.fillStyle = SETTINGS.colors.healBox; const boxSize = 18; ctx.fillRect(-boxSize/2, -boxSize/2, boxSize, boxSize); ctx.fillStyle = '#000'; ctx.fillRect(-3, -6, 6, 12); ctx.fillRect(-6, -3, 12, 6); this.drawDurationBar(ctx, -16); ctx.restore(); } }
+        class HealPack extends ItemBase { constructor(x, y) { super(x, y, SETTINGS.itemHealPack.duration); this.category = 'PASSIVE'; this.healValue = SETTINGS.itemHealPack.value; this.size = 16; } update(dt) { super.update(dt); if (this.z < 50 && !this.isDead) { const dx = player.x - this.x; const dy = player.y - this.y; const distSq = dx*dx + dy*dy; const collisionDist = SETTINGS.playerSize + this.size; if (distSq < collisionDist * collisionDist) { this.pickedUp(); } } } pickedUp() { this.spawnHealFX(this.healValue); this.isDead = true; } draw(ctx) { this.drawShadow(ctx); const drawY = this.y - this.z; const perspectiveScale = 1 + (this.z / 400); ctx.save(); ctx.translate(this.x, drawY); ctx.scale(perspectiveScale, perspectiveScale); ctx.fillStyle = SETTINGS.colors.healPackBase; const baseSize = 18; ctx.fillRect(-baseSize/2, -baseSize/2, baseSize, baseSize); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(-baseSize/2, -baseSize/2, baseSize, baseSize); ctx.fillStyle = SETTINGS.colors.healPack; const crossThick = 6; const crossLen = 14; ctx.fillRect(-crossLen/2, -crossThick/2, crossLen, crossThick); ctx.fillRect(-crossThick/2, -crossLen/2, crossThick, crossLen); this.drawDurationBar(ctx, -16); ctx.restore(); } }
+        class InvincibleStar extends ItemBase { constructor(x, y) { super(x, y, SETTINGS.itemInvincibleStar.duration); this.category = 'PASSIVE'; this.effectDuration = SETTINGS.itemInvincibleStar.effectDuration; this.defendRatio = SETTINGS.itemInvincibleStar.defendRatio; this.size = 16; this.rot = 0; } update(dt) { super.update(dt); this.rot += dt * 2; if (this.z < 50 && !this.isDead) { const dx = player.x - this.x; const dy = player.y - this.y; const distSq = dx*dx + dy*dy; const collisionDist = SETTINGS.playerSize + this.size; if (distSq < collisionDist * collisionDist) { this.pickedUp(); } } } pickedUp() { player.invincibleTimer = this.effectDuration; player.maxInvincibleTimer = this.effectDuration; player.defendRatio = this.defendRatio; floatingTexts.push(new FloatingText(player.x, player.y - 30, "INVINCIBLE!", '#ffd700')); this.isDead = true; } draw(ctx) { this.drawShadow(ctx); const drawY = this.y - this.z; const perspectiveScale = 1 + (this.z / 400); ctx.save(); ctx.translate(this.x, drawY); ctx.scale(perspectiveScale, perspectiveScale); const boxSize = 18; ctx.fillStyle = 'rgba(20, 20, 20, 0.8)'; ctx.fillRect(-boxSize/2, -boxSize/2, boxSize, boxSize); ctx.strokeStyle = SETTINGS.colors.star; ctx.lineWidth = 1; ctx.strokeRect(-boxSize/2, -boxSize/2, boxSize, boxSize); ctx.save(); ctx.rotate(this.rot); ctx.fillStyle = SETTINGS.colors.star; ctx.shadowBlur = 8; ctx.shadowColor = SETTINGS.colors.starGlow; ctx.beginPath(); const spikes = 5; const outerRadius = 7; const innerRadius = 3; for(let i=0; i<spikes*2; i++){ const r = (i % 2 === 0) ? outerRadius : innerRadius; const a = (Math.PI / spikes) * i; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); this.drawDurationBar(ctx, -16); ctx.restore(); } }
+
+        // --- Global Functions ---
+        function healPlayer(amount) { player.currentHp = Math.min(player.maxHp, player.currentHp + amount); floatingTexts.push(new FloatingText(player.x, player.y - 30, `+${amount}`, SETTINGS.colors.textHeal)); for(let i=0; i<8; i++) { particles.push(new Particle(player.x, player.y, 'heal')); } }
+        function takeDamage(amount) { const isInvincible = player.invincibleTimer > 0; const finalDamage = isInvincible ? amount * player.defendRatio : amount; player.currentHp = Math.max(0, player.currentHp - finalDamage); if (!isInvincible) { player.damageShakeTimer = 0.4; } player.damageFlashTimer = 0.4; floatingTexts.push(new FloatingText(player.x, player.y - 30, `-${finalDamage.toFixed(0)}`, SETTINGS.colors.textDmg)); for(let i=0; i<10; i++) { particles.push(new Particle(player.x, player.y, 'damage')); } }
+
+        function init() {
+            resize(); window.addEventListener('resize', resize);
+            window.addEventListener('keydown', (e) => { const key = e.key.toLowerCase(); if (key === 'f') toggleAimMode(); if (key === 'r') spawnRandomPassiveItem(); if (keys.hasOwnProperty(key)) keys[key] = true; });
+            window.addEventListener('keyup', (e) => { const key = e.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = false; });
+            canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top; });
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0) { // L-Click
+                    if (currentState === GAME_STATE.AIMING) tryThrowItem();
+                    else if (currentState === GAME_STATE.ROAMING) fireRocket(player.x, player.y, mouse.x, mouse.y);
+                } else if (e.button === 2) { // R-Click
+                    if (currentState === GAME_STATE.AIMING) toggleAimMode();
+                } else if (e.button === 1) { // M-Click (Drag/Clone)
+                    e.preventDefault();
+                    if (EDITOR_STATE.draggingObj) {
+                        if (EDITOR_STATE.draggingObj.isValidPlacement) {
+                            EDITOR_STATE.draggingObj.isDragging = false;
+                            EDITOR_STATE.draggingObj = null;
+                        }
+                    } else {
+                        // Reverse search to pick top-most
+                        for (let i = fieldObjects.length - 1; i >= 0; i--) {
+                            const obj = fieldObjects[i];
+                            if (obj.contains(mouse.x, mouse.y)) {
+                                if (e.shiftKey) { // Clone
+                                    let newObj = null;
+                                    if (obj instanceof Obstacle) newObj = new Obstacle(obj.x, obj.y, obj.width);
+                                    else if (obj instanceof FireTrap) newObj = new FireTrap(obj.x, obj.y);
+                                    if (newObj) {
+                                        fieldObjects.push(newObj);
+                                        EDITOR_STATE.draggingObj = newObj;
+                                        newObj.isDragging = true;
+                                        EDITOR_STATE.dragOffsetX = newObj.width / 2;
+                                        EDITOR_STATE.dragOffsetY = newObj.height / 2;
+                                        newObj.x = mouse.x - EDITOR_STATE.dragOffsetX;
+                                        newObj.y = mouse.y - EDITOR_STATE.dragOffsetY;
+                                    }
+                                } else { // Drag
+                                    EDITOR_STATE.draggingObj = obj;
+                                    obj.isDragging = true;
+                                    EDITOR_STATE.dragOffsetX = obj.width / 2;
+                                    EDITOR_STATE.dragOffsetY = obj.height / 2;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Init Field Objects
+            const h = height || window.innerHeight; 
+            const obsSize = h / 3;
+            fieldObjects.push(new Obstacle(100, 200, obsSize)); 
+            fieldObjects.push(new FireTrap(80, 80));
+
+            player.x = width * 0.4; player.y = height / 2;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ... (Remaining functions unchanged)
+        function toggleAimMode() { if (currentState === GAME_STATE.ROAMING) { currentState = GAME_STATE.AIMING; aimStatusElement.style.display = 'block'; keys.w = keys.a = keys.s = keys.d = false; } else { currentState = GAME_STATE.ROAMING; aimStatusElement.style.display = 'none'; } }
+        function tryThrowItem() { const aimPos = getClampedAimPosition(); let hitSolid = false; for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, obj)) { hitSolid = true; break; } } if (hitSolid) return; const newItem = new HealBox(aimPos.x, aimPos.y); activeItems.push(newItem); toggleAimMode(); }
+        function spawnRandomPassiveItem() { const maxAttempts = 10; const padding = 50; for (let i = 0; i < maxAttempts; i++) { const rx = padding + Math.random() * (width - padding * 2); const ry = padding + Math.random() * (height - padding * 2); let overlap = false; for(let obj of fieldObjects) { if (checkCollisionWithRect(rx, ry, 15, obj)) { overlap = true; break; } } if (!overlap) { let newItem; if (currentPassiveType === 'HealPack') { newItem = new HealPack(rx, ry); } else if (currentPassiveType === 'InvincibleStar') { newItem = new InvincibleStar(rx, ry); } if (newItem) activeItems.push(newItem); return; } } }
+        function resize() { const margin = 40; const availableWidth = window.innerWidth - margin; const availableHeight = window.innerHeight - margin; if (availableWidth / availableHeight > SETTINGS.aspectRatio) { height = availableHeight; width = height * SETTINGS.aspectRatio; } else { width = availableWidth; height = width / SETTINGS.aspectRatio; } canvas.width = width; canvas.height = height; container.style.width = `${width}px`; container.style.height = `${height}px`; const obs = fieldObjects.find(o => o instanceof Obstacle); if (obs && !obs.isDragging) { obs.width = height / 3; obs.height = height / 3; obs.x = (width - obs.width) / 2; obs.y = (height - obs.height) / 2; } updateDebugInfo(); let stuck = false; for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(player.x, player.y, SETTINGS.playerSize, obj)) { stuck = true; break; } } if (stuck) { player.x = width * 0.1; player.y = height * 0.5; } }
+        function updateDebugInfo() { if (debugInfoElement) { const w = Math.round(width); const h = Math.round(height); debugInfoElement.innerText = `HP: ${Math.ceil(player.currentHp)}/${player.maxHp} | Items: ${activeItems.length}`; } }
+        function lerpAngle(start, end, t) { const da = (end - start) % (2 * Math.PI); const distance = (2 * da) % (2 * Math.PI) - da; return start + distance * t; }
+        function checkCollisionWithRect(cx, cy, radius, rect) { const closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.width)); const closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.height)); const distanceX = cx - closestX; const distanceY = cy - closestY; const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY); return distanceSquared < (radius * radius); }
+        function checkCollision(cx, cy, radius) { for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(cx, cy, radius, obj)) { return true; } } return false; }
+        function getClampedAimPosition() { const dx = mouse.x - player.x; const dy = mouse.y - player.y; const dist = Math.sqrt(dx*dx + dy*dy); let finalX = mouse.x; let finalY = mouse.y; if (dist > SETTINGS.itemHealBox.maxAimRadius) { const ratio = SETTINGS.itemHealBox.maxAimRadius / dist; finalX = player.x + dx * ratio; finalY = player.y + dy * ratio; } return { x: finalX, y: finalY }; }
+        function update(deltaTime) { if (player.invincibleTimer > 0) { player.invincibleTimer -= deltaTime; } else { player.invincibleTimer = 0; player.defendRatio = 1; } if (player.damageShakeTimer > 0) player.damageShakeTimer -= deltaTime; if (player.damageFlashTimer > 0) player.damageFlashTimer -= deltaTime; if (EDITOR_STATE.draggingObj) { const obj = EDITOR_STATE.draggingObj; const nextX = mouse.x - EDITOR_STATE.dragOffsetX; const nextY = mouse.y - EDITOR_STATE.dragOffsetY; obj.setPosition(nextX, nextY); obj.isValidPlacement = true; for (let other of fieldObjects) { if (obj !== other) { if (obj.overlaps(other)) { obj.isValidPlacement = false; break; } } } } if (currentState === GAME_STATE.ROAMING) { let dx = 0; let dy = 0; if (keys.w) dy -= 1; if (keys.s) dy += 1; if (keys.a) dx -= 1; if (keys.d) dx += 1; const length = Math.sqrt(dx * dx + dy * dy); if (length > 0) { dx /= length; dy /= length; player.targetAngle = Math.atan2(dy, dx); const moveDist = SETTINGS.playerSpeed * deltaTime; let nextX = player.x + dx * moveDist; const margin = SETTINGS.playerSize; nextX = Math.max(margin, Math.min(width - margin, nextX)); let collideX = false; for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(nextX, player.y, SETTINGS.playerSize, obj)) { collideX = true; break; } } if (!collideX) player.x = nextX; let nextY = player.y + dy * moveDist; nextY = Math.max(margin, Math.min(height - margin, nextY)); let collideY = false; for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(player.x, nextY, SETTINGS.playerSize, obj)) { collideY = true; break; } } if (!collideY) player.y = nextY; if (!collideX && !collideY && Math.random() > 0.5) player.trail.push({ x: player.x, y: player.y, life: 1.0 }); } const t = 1 - Math.exp(-SETTINGS.rotationSpeed * deltaTime); player.currentAngle = lerpAngle(player.currentAngle, player.targetAngle, t); } else if (currentState === GAME_STATE.AIMING) { const aimPos = getClampedAimPosition(); const dx = aimPos.x - player.x; const dy = aimPos.y - player.y; player.targetAngle = Math.atan2(dy, dx); const t = 1 - Math.exp(-SETTINGS.rotationSpeed * deltaTime); player.currentAngle = lerpAngle(player.currentAngle, player.targetAngle, t); } fieldObjects.forEach(obj => obj.update(deltaTime)); projectiles.forEach(p => p.update(deltaTime)); projectiles = projectiles.filter(p => !p.isDead); player.trail.forEach(p => p.life -= deltaTime * 4); player.trail = player.trail.filter(p => p.life > 0); activeItems.forEach(item => item.update(deltaTime)); activeItems = activeItems.filter(item => !item.isDead); updateDebugInfo(); floatingTexts.forEach(txt => txt.update(deltaTime)); floatingTexts = floatingTexts.filter(txt => txt.life > 0); particles.forEach(p => p.update(deltaTime)); particles = particles.filter(p => p.life > 0); }
+        function draw() { ctx.fillStyle = SETTINGS.colors.bg; ctx.fillRect(0, 0, width, height); drawGrid(); fieldObjects.forEach(obj => obj.draw(ctx)); activeItems.forEach(item => item.draw(ctx)); projectiles.forEach(p => p.draw(ctx)); particles.forEach(p => p.draw(ctx)); drawTrail(); drawPlayer(); drawPlayerHPBar(); if (currentState === GAME_STATE.AIMING) drawAimingUI(); floatingTexts.forEach(txt => txt.draw(ctx)); }
+        function drawPlayerHPBar() { ctx.save(); let shakeX = 0, shakeY = 0; if (player.damageShakeTimer > 0) { const shakeIntensity = 3; shakeX = (Math.random() - 0.5) * shakeIntensity * 2; shakeY = (Math.random() - 0.5) * shakeIntensity * 2; } ctx.translate(player.x + shakeX, player.y + shakeY); const barW = 40; const barH = 5; const yOffset = -SETTINGS.playerSize - 15; if (player.invincibleTimer > 0 && player.maxInvincibleTimer > 0) { const progress = player.invincibleTimer / player.maxInvincibleTimer; const iconSize = 22; ctx.save(); if (progress <= 0.4) { const speed = 12.56; const blink = Math.sin(Date.now() / 1000 * speed); ctx.globalAlpha = 0.3 + 0.7 * ((blink + 1) / 2); } drawBuffIcon(ctx, 0, yOffset - 17, iconSize, progress, SETTINGS.colors.buffBorder, 'SHIELD'); ctx.restore(); } ctx.fillStyle = '#111'; ctx.fillRect(-barW/2 -1, yOffset -1, barW + 2, barH + 2); const hpPct = player.currentHp / player.maxHp; let hpColor = '#00ff00'; if (hpPct < 0.3) hpColor = '#ff0000'; else if (hpPct < 0.6) hpColor = '#ffff00'; ctx.fillStyle = hpColor; ctx.fillRect(-barW/2, yOffset, barW * hpPct, barH); ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.strokeRect(-barW/2 -1, yOffset -1, barW + 2, barH + 2); ctx.restore(); }
+        function drawAimingUI() { const aimPos = getClampedAimPosition(); let isColliding = false; for(let obj of fieldObjects) { if (obj.isSolid && checkCollisionWithRect(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, obj)) { isColliding = true; break; } } ctx.strokeStyle = SETTINGS.colors.aimRange; ctx.lineWidth = 2.5; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.arc(player.x, player.y, SETTINGS.itemHealBox.maxAimRadius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.arc(player.x, player.y, SETTINGS.itemHealBox.maxAimRadius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(aimPos.x, aimPos.y); ctx.stroke(); ctx.fillStyle = isColliding ? SETTINGS.colors.aimInvalid : SETTINGS.colors.aimValid; ctx.beginPath(); ctx.arc(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); }
+        function drawGrid() { ctx.strokeStyle = SETTINGS.colors.grid; ctx.lineWidth = 1; ctx.beginPath(); for (let x = 0; x <= width; x += SETTINGS.gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, height); } for (let y = 0; y <= height; y += SETTINGS.gridSize) { ctx.moveTo(0, y); ctx.lineTo(width, y); } ctx.stroke(); }
+        function drawTrail() { player.trail.forEach(p => { ctx.fillStyle = `rgba(0, 243, 255, ${p.life * 0.3})`; ctx.beginPath(); ctx.arc(p.x, p.y, SETTINGS.playerSize * 0.4 * p.life, 0, Math.PI * 2); ctx.fill(); }); }
+        function drawPlayer() { ctx.save(); let shakeX = 0, shakeY = 0; if (player.damageShakeTimer > 0) { const shakeIntensity = 3; shakeX = (Math.random() - 0.5) * shakeIntensity * 2; shakeY = (Math.random() - 0.5) * shakeIntensity * 2; } ctx.translate(player.x + shakeX, player.y + shakeY); if (player.invincibleTimer > 0) { const shieldScale = 1 + Math.sin(Date.now() / 100) * 0.1; ctx.save(); ctx.scale(shieldScale, shieldScale); const r = SETTINGS.playerSize * 1.5; ctx.beginPath(); for(let i=0; i<6; i++) { const angle = i * Math.PI / 3 - Math.PI / 2; ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r); } ctx.closePath(); ctx.fillStyle = SETTINGS.colors.shield; ctx.fill(); ctx.strokeStyle = SETTINGS.colors.shieldBorder; ctx.lineWidth = 2; ctx.stroke(); ctx.save(); ctx.clip(); const cycle = 1000; const t = (Date.now() % cycle) / cycle; const dist = r * 5; const offset = (t * dist) - (dist / 2); const bandSize = r * 0.8; const x0 = offset - bandSize; const y0 = -offset + bandSize; const x1 = offset + bandSize; const y1 = -offset - bandSize; const gradient = ctx.createLinearGradient(x0, y0, x1, y1); gradient.addColorStop(0, 'rgba(255, 255, 255, 0)'); gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)'); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)'); ctx.fillStyle = gradient; ctx.fillRect(-r*2, -r*2, r*4, r*4); ctx.restore(); ctx.restore(); } ctx.rotate(player.currentAngle); ctx.shadowBlur = 15; if (player.damageFlashTimer > 0) { ctx.shadowColor = '#ff0000'; ctx.fillStyle = '#ff3333'; } else { ctx.shadowColor = SETTINGS.colors.playerShadow; ctx.fillStyle = SETTINGS.colors.player; } ctx.beginPath(); ctx.moveTo(SETTINGS.playerSize, 0); ctx.lineTo(-SETTINGS.playerSize * 0.6, SETTINGS.playerSize * 0.7); ctx.lineTo(-SETTINGS.playerSize * 0.3, 0); ctx.lineTo(-SETTINGS.playerSize * 0.6, -SETTINGS.playerSize * 0.7); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        function gameLoop(timestamp) { const deltaTime = (timestamp - lastTime) / 1000; lastTime = timestamp; if (deltaTime < 0.1) update(deltaTime); draw(); requestAnimationFrame(gameLoop); }
+        init();
+    </script>
+</body>
+</html>
