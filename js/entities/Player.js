@@ -17,7 +17,8 @@ export const player = {
     damageFlashTimer: 0,
     invincibleTimer: 0,
     maxInvincibleTimer: 0,
-    defendRatio: 1
+    defendRatio: 1,
+    heldItem: null
 };
 
 // 治療玩家

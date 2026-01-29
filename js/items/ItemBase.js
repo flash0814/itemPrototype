@@ -10,27 +10,52 @@ export class ItemBase {
         this.isDead = false;
         this.z = 150;
         this.vz = 0;
+        this.vx = 0;
+        this.vy = 0;
         this.gravity = 2500;
         this.bounciness = 0.4;
         this.isGrounded = false;
+
+        // 道具系統屬性
+        this.category = 'PASSIVE';
+        this.maxAimRadius = 0;
+        this.pickupRadius = 20;
+        this.isHeld = false;
+        this.isActivated = false;
     }
 
     update(dt) {
-        if (this.duration !== -1) {
+        // 持有中不更新
+        if (this.isHeld) return;
+
+        // Duration 倒數（0 = 永久）
+        if (this.duration !== 0 && this.duration !== -1) {
             this.lifeTimer += dt;
             if (this.lifeTimer >= this.duration) {
                 this.onDurationEnd();
             }
         }
 
+        // 物理：重力 + 彈跳 + 水平移動
         if (!this.isGrounded) {
             this.vz += this.gravity * dt;
             this.z -= this.vz * dt;
+
+            // 水平移動（拋出時用）
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+
             if (this.z <= 0) {
                 this.z = 0;
                 this.vz = -this.vz * this.bounciness;
+                this.vx *= 0.6;
+                this.vy *= 0.6;
                 if (Math.abs(this.vz) < 100) {
                     this.vz = 0;
+                    this.vx = 0;
+                    this.vy = 0;
                     this.isGrounded = true;
                 }
             }
@@ -40,6 +65,40 @@ export class ItemBase {
     onDurationEnd() {
         this.isDead = true;
     }
+
+    // 被動道具效果 — 子類覆寫
+    onPassiveEffect() {}
+
+    // 道具被撿起
+    onPickup() {
+        if (this.category === 'PASSIVE') {
+            this.onPassiveEffect();
+            this.isDead = true;
+        } else {
+            this.isHeld = true;
+        }
+    }
+
+    // Active 道具被取代掉落到地上
+    dropToGround(x, y) {
+        this.isHeld = false;
+        this.isActivated = false;
+        this.x = x;
+        this.y = y;
+        this.z = 100;
+        this.vz = -300;
+        this.isGrounded = false;
+        this.lifeTimer = 0;
+
+        // 隨機水平方向拋出
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 100 + Math.random() * 100;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+    }
+
+    // 畫 icon（子類覆寫）— 以原點為中心
+    drawIcon(ctx) {}
 
     spawnHealFX(value) {
         healPlayer(value);
@@ -60,7 +119,7 @@ export class ItemBase {
     }
 
     drawDurationBar(ctx, yOffset) {
-        if (this.duration === -1) return;
+        if (this.duration === 0 || this.duration === -1) return;
 
         const lifePercent = Math.max(0, 1 - (this.lifeTimer / this.duration));
         const barWidth = 24;

@@ -5,7 +5,7 @@ export const GAME_STATE_MODE = { ROAMING: 0, AIMING: 1 };
 
 export const gameState = {
     currentMode: GAME_STATE_MODE.ROAMING,
-    currentPassiveType: 'HealPack',
+    currentItemType: 'HealPack',
     currentPlayerSettingType: 'PlayerStatus',
 
     // 畫布尺寸

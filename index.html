@@ -19,11 +19,11 @@
                 操作: <span class="key-hint">W</span><span class="key-hint">A</span><span class="key-hint">S</span><span class="key-hint">D</span> 移動 |
                 <span class="key-hint">L-Click</span> 射擊 |
                 <span class="key-hint">F</span> 道具模式 |
-                <span class="key-hint">R</span> 生成被動道具 |
+                <span class="key-hint">R</span> 生成道具 |
                 <span class="key-hint">中鍵</span> 拖移 (Shift+中鍵 複製)
             </div>
             <div id="debug-info">Loading stats...</div>
-            <div style="font-size: 12px; color: #555;">Tech Demo v5.0 | Modular Refactor</div>
+            <div style="font-size: 12px; color: #555;">Tech Demo v5.1 | Item System Refactor</div>
         </div>
 
         <div id="settings-panel">
@@ -77,44 +77,48 @@
                 </div>
             </div>
 
-            <!-- 3. Active: HealBox -->
+            <!-- 3. Items -->
             <div class="setting-group">
-                <h3>Active: HealBox</h3>
-                <div class="input-row">
-                    <label>Max Aim Radius</label>
-                    <input type="number" id="inp-aim-radius" value="200">
-                </div>
-                <div class="input-row">
-                    <label>Tick Counts</label>
-                    <input type="number" id="inp-heal-counts" value="5" step="1">
-                </div>
-                <div class="input-row">
-                    <label>Radius (px)</label>
-                    <input type="number" id="inp-heal-rad" value="170">
-                </div>
-                <div class="input-row">
-                    <label>Heal Value</label>
-                    <input type="number" id="inp-heal-val" value="25">
-                </div>
-                <div class="input-row">
-                    <label>Tick Rate (s)</label>
-                    <input type="number" id="inp-heal-tick" value="1" step="0.1">
-                </div>
-            </div>
-
-            <!-- 4. Passive Item -->
-            <div class="setting-group">
-                <h3>Passive Item</h3>
-                <select id="sel-passive-type">
+                <h3>Items</h3>
+                <select id="sel-item-type">
+                    <option value="HealBox">HealBox (治療箱)</option>
                     <option value="HealPack">HealPack (補血包)</option>
                     <option value="InvincibleStar">InvincibleStar (無敵星)</option>
                 </select>
 
+                <!-- HealBox Settings -->
+                <div id="group-healbox">
+                    <div class="input-row">
+                        <label>Max Aim Radius</label>
+                        <input type="number" id="inp-aim-radius" value="200">
+                    </div>
+                    <div class="input-row">
+                        <label>Tick Counts</label>
+                        <input type="number" id="inp-heal-counts" value="5" step="1">
+                    </div>
+                    <div class="input-row">
+                        <label>Radius (px)</label>
+                        <input type="number" id="inp-heal-rad" value="170">
+                    </div>
+                    <div class="input-row">
+                        <label>Heal Value</label>
+                        <input type="number" id="inp-heal-val" value="25">
+                    </div>
+                    <div class="input-row">
+                        <label>Tick Rate (s)</label>
+                        <input type="number" id="inp-heal-tick" value="1" step="0.1">
+                    </div>
+                    <div class="input-row">
+                        <label>Ground Duration (s)</label>
+                        <input type="number" id="inp-healbox-dur" value="10" step="1" title="0 = permanent">
+                    </div>
+                </div>
+
                 <!-- HealPack Settings -->
-                <div id="group-healpack">
+                <div id="group-healpack" class="hidden">
                     <div class="input-row">
                         <label>Duration (s)</label>
-                        <input type="number" id="inp-pack-dur" value="10" step="1" title="-1 for infinite">
+                        <input type="number" id="inp-pack-dur" value="10" step="1" title="0 = permanent">
                     </div>
                     <div class="input-row">
                         <label>Heal Value</label>
@@ -126,7 +130,7 @@
                 <div id="group-star" class="hidden">
                     <div class="input-row">
                         <label>Duration (s)</label>
-                        <input type="number" id="inp-star-dur" value="10" step="1" title="-1 for infinite">
+                        <input type="number" id="inp-star-dur" value="10" step="1" title="0 = permanent">
                     </div>
                     <div class="input-row">
                         <label>Buff Time (s)</label>

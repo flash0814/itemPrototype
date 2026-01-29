@@ -15,6 +15,7 @@ import {
     drawPlayer,
     drawPlayerHPBar,
     drawAimingUI,
+    drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
 
@@ -40,7 +41,7 @@ export function initGame() {
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
         if (key === 'f') toggleAimMode();
-        if (key === 'r') spawnRandomPassiveItem();
+        if (key === 'r') spawnItem();
         if (input.keys.hasOwnProperty(key)) input.keys[key] = true;
     });
 
@@ -128,6 +129,8 @@ function handleMiddleClick(e) {
 
 function toggleAimMode() {
     if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
+        // 沒有持有 active 道具就不進入瞄準
+        if (!player.heldItem) return;
         gameState.currentMode = GAME_STATE_MODE.AIMING;
         aimStatusElement.style.display = 'block';
         input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
@@ -138,6 +141,8 @@ function toggleAimMode() {
 }
 
 function tryThrowItem() {
+    if (!player.heldItem) return;
+
     const aimPos = getClampedAimPosition(input);
 
     let hitSolid = false;
@@ -150,12 +155,23 @@ function tryThrowItem() {
 
     if (hitSolid) return;
 
-    const newItem = new HealBox(aimPos.x, aimPos.y);
-    gameState.activeItems.push(newItem);
+    // 取出持有道具，啟動並放置
+    const item = player.heldItem;
+    player.heldItem = null;
+
+    item.isHeld = false;
+    item.x = aimPos.x;
+    item.y = aimPos.y;
+    item.z = 150;
+    item.vz = 0;
+    item.isGrounded = false;
+    item.activate();
+
+    gameState.activeItems.push(item);
     toggleAimMode();
 }
 
-function spawnRandomPassiveItem() {
+function spawnItem() {
     const maxAttempts = 10;
     const padding = 50;
 
@@ -173,10 +189,12 @@ function spawnRandomPassiveItem() {
 
         if (!overlap) {
             let newItem;
-            if (gameState.currentPassiveType === 'HealPack') {
+            if (gameState.currentItemType === 'HealPack') {
                 newItem = new HealPack(rx, ry);
-            } else if (gameState.currentPassiveType === 'InvincibleStar') {
+            } else if (gameState.currentItemType === 'InvincibleStar') {
                 newItem = new InvincibleStar(rx, ry);
+            } else if (gameState.currentItemType === 'HealBox') {
+                newItem = new HealBox(rx, ry);
             }
             if (newItem) gameState.activeItems.push(newItem);
             return;
@@ -236,7 +254,8 @@ function resize() {
 
 function updateDebugInfo() {
     if (debugInfoElement) {
-        debugInfoElement.innerText = `HP: ${Math.ceil(player.currentHp)}/${player.maxHp} | Items: ${gameState.activeItems.length}`;
+        const held = player.heldItem ? player.heldItem.constructor.name : 'None';
+        debugInfoElement.innerText = `HP: ${Math.ceil(player.currentHp)}/${player.maxHp} | Held: ${held} | Items: ${gameState.activeItems.length}`;
     }
 }
 
@@ -247,6 +266,34 @@ function checkCollision(cx, cy, radius) {
         }
     }
     return false;
+}
+
+// 集中 pickup 檢測
+function checkItemPickup() {
+    for (const item of gameState.activeItems) {
+        // 跳過不可撿的道具
+        if (item.isDead || item.isHeld || item.isActivated || !item.isGrounded) continue;
+
+        const dx = player.x - item.x;
+        const dy = player.y - item.y;
+        const distSq = dx * dx + dy * dy;
+        const pickupDist = SETTINGS.playerSize + item.pickupRadius;
+
+        if (distSq < pickupDist * pickupDist) {
+            if (item.category === 'PASSIVE') {
+                item.onPickup();
+            } else if (item.category === 'ACTIVE') {
+                // 取代舊的 active 道具
+                if (player.heldItem) {
+                    const oldItem = player.heldItem;
+                    oldItem.dropToGround(player.x, player.y);
+                    gameState.activeItems.push(oldItem);
+                }
+                player.heldItem = item;
+                item.onPickup();
+            }
+        }
+    }
 }
 
 function update(deltaTime) {
@@ -355,6 +402,9 @@ function update(deltaTime) {
     gameState.activeItems.forEach(item => item.update(deltaTime));
     gameState.activeItems = gameState.activeItems.filter(item => !item.isDead);
 
+    // 集中 pickup 檢測
+    checkItemPickup();
+
     updateDebugInfo();
 
     // 更新浮動文字
@@ -380,6 +430,7 @@ function draw() {
     drawTrail(ctx);
     drawPlayer(ctx);
     drawPlayerHPBar(ctx);
+    drawHeldItemUI(ctx);
 
     if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
         drawAimingUI(ctx, input);

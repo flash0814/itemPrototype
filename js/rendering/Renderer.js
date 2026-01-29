@@ -217,9 +217,47 @@ export function drawPlayerHPBar(ctx) {
     ctx.restore();
 }
 
+// 繪製持有道具 UI
+export function drawHeldItemUI(ctx) {
+    if (!player.heldItem) return;
+
+    const padding = 15;
+    const boxSize = 48;
+    const x = padding + boxSize / 2;
+    const y = gameState.height - padding - boxSize / 2 - 60; // 避開底部操作提示
+
+    ctx.save();
+
+    // 背景框
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.fillRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+    ctx.strokeRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+
+    // 標題
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('[F] Use', x, y - boxSize / 2 - 4);
+
+    // 放大 icon
+    ctx.translate(x, y);
+    ctx.scale(2, 2);
+    player.heldItem.drawIcon(ctx);
+
+    ctx.restore();
+}
+
+// 取得持有道具的瞄準半徑
+function getAimRadius() {
+    return player.heldItem ? player.heldItem.maxAimRadius : 200;
+}
+
 // 繪製瞄準 UI
 export function drawAimingUI(ctx, input) {
     const aimPos = getClampedAimPosition(input);
+    const aimRadius = getAimRadius();
 
     let isColliding = false;
     for (let obj of gameState.fieldObjects) {
@@ -234,7 +272,7 @@ export function drawAimingUI(ctx, input) {
     ctx.lineWidth = 2.5;
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
-    ctx.arc(player.x, player.y, SETTINGS.itemHealBox.maxAimRadius, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, aimRadius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -242,7 +280,7 @@ export function drawAimingUI(ctx, input) {
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
-    ctx.arc(player.x, player.y, SETTINGS.itemHealBox.maxAimRadius, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, aimRadius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -266,6 +304,7 @@ export function drawAimingUI(ctx, input) {
 
 // 取得限制在範圍內的瞄準位置
 export function getClampedAimPosition(input) {
+    const aimRadius = getAimRadius();
     const dx = input.mouse.x - player.x;
     const dy = input.mouse.y - player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -273,8 +312,8 @@ export function getClampedAimPosition(input) {
     let finalX = input.mouse.x;
     let finalY = input.mouse.y;
 
-    if (dist > SETTINGS.itemHealBox.maxAimRadius) {
-        const ratio = SETTINGS.itemHealBox.maxAimRadius / dist;
+    if (dist > aimRadius) {
+        const ratio = aimRadius / dist;
         finalX = player.x + dx * ratio;
         finalY = player.y + dy * ratio;
     }

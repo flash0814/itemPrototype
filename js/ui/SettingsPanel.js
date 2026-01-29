@@ -14,15 +14,21 @@ export const inputs = {
     rocketLife: null,
     fireDmg: null,
     fireRate: null,
+    // Items dropdown
+    itemTypeSelect: null,
+    // HealBox
+    healboxGroup: null,
     aimRadius: null,
     healCounts: null,
     healRad: null,
     healVal: null,
     healTick: null,
-    passiveSelect: null,
+    healboxDur: null,
+    // HealPack
     packGroup: null,
     packDur: null,
     packVal: null,
+    // InvincibleStar
     starGroup: null,
     starDur: null,
     starEffect: null,
@@ -41,12 +47,16 @@ export function initSettingsPanel() {
     inputs.rocketLife = document.getElementById('inp-rocket-life');
     inputs.fireDmg = document.getElementById('inp-fire-dmg');
     inputs.fireRate = document.getElementById('inp-fire-rate');
+
+    // Items
+    inputs.itemTypeSelect = document.getElementById('sel-item-type');
+    inputs.healboxGroup = document.getElementById('group-healbox');
     inputs.aimRadius = document.getElementById('inp-aim-radius');
     inputs.healCounts = document.getElementById('inp-heal-counts');
     inputs.healRad = document.getElementById('inp-heal-rad');
     inputs.healVal = document.getElementById('inp-heal-val');
     inputs.healTick = document.getElementById('inp-heal-tick');
-    inputs.passiveSelect = document.getElementById('sel-passive-type');
+    inputs.healboxDur = document.getElementById('inp-healbox-dur');
     inputs.packGroup = document.getElementById('group-healpack');
     inputs.packDur = document.getElementById('inp-pack-dur');
     inputs.packVal = document.getElementById('inp-pack-val');
@@ -55,7 +65,7 @@ export function initSettingsPanel() {
     inputs.starEffect = document.getElementById('inp-star-effect');
     inputs.starDef = document.getElementById('inp-star-def');
 
-    // 綁定事件
+    // --- Player Settings ---
     inputs.playerSettingsSelect.addEventListener('change', (e) => {
         gameState.currentPlayerSettingType = e.target.value;
         if (gameState.currentPlayerSettingType === 'PlayerStatus') {
@@ -79,25 +89,36 @@ export function initSettingsPanel() {
     inputs.rocketLife.addEventListener('change', (e) => SETTINGS.attackRocket.lifetime = Number(e.target.value));
     inputs.fireDmg.addEventListener('change', (e) => SETTINGS.general.fireTrapDmg = Number(e.target.value));
     inputs.fireRate.addEventListener('change', (e) => SETTINGS.general.fireTrapTick = Number(e.target.value));
+
+    // --- Items dropdown ---
+    inputs.itemTypeSelect.addEventListener('change', (e) => {
+        gameState.currentItemType = e.target.value;
+        inputs.healboxGroup.classList.add('hidden');
+        inputs.packGroup.classList.add('hidden');
+        inputs.starGroup.classList.add('hidden');
+
+        if (e.target.value === 'HealBox') {
+            inputs.healboxGroup.classList.remove('hidden');
+        } else if (e.target.value === 'HealPack') {
+            inputs.packGroup.classList.remove('hidden');
+        } else if (e.target.value === 'InvincibleStar') {
+            inputs.starGroup.classList.remove('hidden');
+        }
+    });
+
+    // --- HealBox ---
     inputs.aimRadius.addEventListener('change', (e) => SETTINGS.itemHealBox.maxAimRadius = Number(e.target.value));
     inputs.healCounts.addEventListener('change', (e) => SETTINGS.itemHealBox.counts = Math.max(1, parseInt(e.target.value)));
     inputs.healRad.addEventListener('change', (e) => SETTINGS.itemHealBox.radius = Number(e.target.value));
     inputs.healVal.addEventListener('change', (e) => SETTINGS.itemHealBox.value = Number(e.target.value));
     inputs.healTick.addEventListener('change', (e) => SETTINGS.itemHealBox.tick = Number(e.target.value));
+    inputs.healboxDur.addEventListener('change', (e) => SETTINGS.itemHealBox.groundDuration = Number(e.target.value));
 
-    inputs.passiveSelect.addEventListener('change', (e) => {
-        gameState.currentPassiveType = e.target.value;
-        if (gameState.currentPassiveType === 'HealPack') {
-            inputs.packGroup.classList.remove('hidden');
-            inputs.starGroup.classList.add('hidden');
-        } else if (gameState.currentPassiveType === 'InvincibleStar') {
-            inputs.packGroup.classList.add('hidden');
-            inputs.starGroup.classList.remove('hidden');
-        }
-    });
-
+    // --- HealPack ---
     inputs.packDur.addEventListener('change', (e) => SETTINGS.itemHealPack.duration = Number(e.target.value));
     inputs.packVal.addEventListener('change', (e) => SETTINGS.itemHealPack.value = Number(e.target.value));
+
+    // --- InvincibleStar ---
     inputs.starDur.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.duration = Number(e.target.value));
     inputs.starEffect.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.effectDuration = Number(e.target.value));
     inputs.starDef.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.defendRatio = Number(e.target.value));

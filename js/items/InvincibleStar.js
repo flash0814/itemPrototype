@@ -8,62 +8,40 @@ export class InvincibleStar extends ItemBase {
     constructor(x, y) {
         super(x, y, SETTINGS.itemInvincibleStar.duration);
         this.category = 'PASSIVE';
+        this.maxAimRadius = SETTINGS.itemInvincibleStar.maxAimRadius;
         this.effectDuration = SETTINGS.itemInvincibleStar.effectDuration;
         this.defendRatio = SETTINGS.itemInvincibleStar.defendRatio;
         this.size = 16;
         this.rot = 0;
     }
 
-    update(dt) {
-        super.update(dt);
-        this.rot += dt * 2;
-
-        if (this.z < 50 && !this.isDead) {
-            const dx = player.x - this.x;
-            const dy = player.y - this.y;
-            const distSq = dx * dx + dy * dy;
-            const collisionDist = SETTINGS.playerSize + this.size;
-
-            if (distSq < collisionDist * collisionDist) {
-                this.pickedUp();
-            }
-        }
-    }
-
-    pickedUp() {
+    onPassiveEffect() {
         player.invincibleTimer = this.effectDuration;
         player.maxInvincibleTimer = this.effectDuration;
         player.defendRatio = this.defendRatio;
         gameState.floatingTexts.push(
             new FloatingText(player.x, player.y - 30, "INVINCIBLE!", '#ffd700')
         );
-        this.isDead = true;
     }
 
-    draw(ctx) {
-        this.drawShadow(ctx);
+    update(dt) {
+        super.update(dt);
+        if (this.isHeld) return;
+        this.rot += dt * 2;
+        // pickup 檢測已移至 Game.js
+    }
 
-        const drawY = this.y - this.z;
-        const perspectiveScale = 1 + (this.z / 400);
-
-        ctx.save();
-        ctx.translate(this.x, drawY);
-        ctx.scale(perspectiveScale, perspectiveScale);
-
+    drawIcon(ctx) {
         const boxSize = 18;
         ctx.fillStyle = 'rgba(20, 20, 20, 0.8)';
         ctx.fillRect(-boxSize / 2, -boxSize / 2, boxSize, boxSize);
-
         ctx.strokeStyle = SETTINGS.colors.star;
         ctx.lineWidth = 1;
         ctx.strokeRect(-boxSize / 2, -boxSize / 2, boxSize, boxSize);
 
-        ctx.save();
-        ctx.rotate(this.rot);
         ctx.fillStyle = SETTINGS.colors.star;
         ctx.shadowBlur = 8;
         ctx.shadowColor = SETTINGS.colors.starGlow;
-
         ctx.beginPath();
         const spikes = 5;
         const outerRadius = 7;
@@ -75,6 +53,23 @@ export class InvincibleStar extends ItemBase {
         }
         ctx.closePath();
         ctx.fill();
+    }
+
+    draw(ctx) {
+        if (this.isHeld) return;
+
+        this.drawShadow(ctx);
+
+        const drawY = this.y - this.z;
+        const perspectiveScale = 1 + (this.z / 400);
+
+        ctx.save();
+        ctx.translate(this.x, drawY);
+        ctx.scale(perspectiveScale, perspectiveScale);
+
+        ctx.save();
+        ctx.rotate(this.rot);
+        this.drawIcon(ctx);
         ctx.restore();
 
         this.drawDurationBar(ctx, -16);

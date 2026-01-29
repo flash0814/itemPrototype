@@ -45,12 +45,13 @@ export const SETTINGS = {
 
     itemHealBox: {
         maxAimRadius: 200,
+        groundDuration: 10,
         counts: 5,
         radius: 170,
         value: 25,
         tick: 1
     },
 
-    itemHealPack: { duration: 10, value: 30 },
-    itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0 }
+    itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
+    itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 }
 };
