@@ -45,7 +45,7 @@ export const SETTINGS = {
 
     itemHealBox: {
         maxAimRadius: 200,
-        groundDuration: 10,
+        groundDuration: 0,
         counts: 5,
         radius: 170,
         value: 25,

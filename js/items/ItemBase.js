@@ -52,11 +52,14 @@ export class ItemBase {
                 this.vz = -this.vz * this.bounciness;
                 this.vx *= 0.6;
                 this.vy *= 0.6;
-                if (Math.abs(this.vz) < 100) {
+                if (Math.abs(this.vz) < 50) {
                     this.vz = 0;
                     this.vx = 0;
                     this.vy = 0;
                     this.isGrounded = true;
+                    // 還原預設物理參數
+                    this.gravity = 2500;
+                    this.bounciness = 0.4;
                 }
             }
         }
@@ -85,14 +88,16 @@ export class ItemBase {
         this.isActivated = false;
         this.x = x;
         this.y = y;
-        this.z = 100;
-        this.vz = -300;
+        this.z = 30;
+        this.vz = -200;
+        this.gravity = 500;
+        this.bounciness = 0.3;
         this.isGrounded = false;
         this.lifeTimer = 0;
 
-        // 隨機水平方向拋出
+        // 水平為主、低弧線拋出
         const angle = Math.random() * Math.PI * 2;
-        const speed = 100 + Math.random() * 100;
+        const speed = 150 + Math.random() * 80;
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
     }

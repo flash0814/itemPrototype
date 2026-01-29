@@ -217,34 +217,57 @@ export function drawPlayerHPBar(ctx) {
     ctx.restore();
 }
 
-// 繪製持有道具 UI
+// 繪製持有道具 UI（始終顯示）
 export function drawHeldItemUI(ctx) {
-    if (!player.heldItem) return;
-
-    const padding = 15;
     const boxSize = 48;
-    const x = padding + boxSize / 2;
-    const y = gameState.height - padding - boxSize / 2 - 60; // 避開底部操作提示
+    const x = gameState.width / 2;
+    const y = 20 + boxSize / 2;
+    const anim = gameState.inventoryAnim;
 
     ctx.save();
 
-    // 背景框
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    // 背景框（始終顯示）
+    ctx.fillStyle = player.heldItem ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.3)';
+    ctx.strokeStyle = player.heldItem ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 2;
     ctx.fillRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
     ctx.strokeRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
 
     // 標題
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillStyle = player.heldItem ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)';
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('[F] Use', x, y - boxSize / 2 - 4);
 
-    // 放大 icon
-    ctx.translate(x, y);
-    ctx.scale(2, 2);
-    player.heldItem.drawIcon(ctx);
+    // 離開動畫（舊道具向上淡出）
+    if (anim.exitTimer > 0 && anim.exitIcon) {
+        const p = anim.exitTimer / anim.exitDuration;
+        ctx.save();
+        ctx.globalAlpha = p;
+        ctx.translate(x, y - (1 - p) * 20);
+        ctx.scale(2, 2);
+        anim.exitIcon(ctx);
+        ctx.restore();
+    }
+
+    // 當前持有道具
+    if (player.heldItem) {
+        ctx.save();
+        if (anim.enterTimer > 0) {
+            // 進入動畫（從下方滑入 + 縮放）
+            const p = 1 - anim.enterTimer / anim.enterDuration;
+            const ease = 1 - (1 - p) * (1 - p); // easeOutQuad
+            ctx.globalAlpha = ease;
+            ctx.translate(x, y + (1 - ease) * 20);
+            const s = 1.5 + 0.5 * ease;
+            ctx.scale(s, s);
+        } else {
+            ctx.translate(x, y);
+            ctx.scale(2, 2);
+        }
+        player.heldItem.drawIcon(ctx);
+        ctx.restore();
+    }
 
     ctx.restore();
 }

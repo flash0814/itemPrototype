@@ -167,7 +167,7 @@ function tryThrowItem() {
     item.isGrounded = false;
     item.activate();
 
-    gameState.activeItems.push(item);
+    // 不需要 push — item 撿起時沒有從 activeItems 移除，只是 isHeld=true
     toggleAimMode();
 }
 
@@ -286,9 +286,13 @@ function checkItemPickup() {
                 // 取代舊的 active 道具
                 if (player.heldItem) {
                     const oldItem = player.heldItem;
+                    // 觸發離開動畫
+                    gameState.inventoryAnim.exitIcon = oldItem.drawIcon.bind(oldItem);
+                    gameState.inventoryAnim.exitTimer = gameState.inventoryAnim.exitDuration;
                     oldItem.dropToGround(player.x, player.y);
-                    gameState.activeItems.push(oldItem);
                 }
+                // 觸發進入動畫
+                gameState.inventoryAnim.enterTimer = gameState.inventoryAnim.enterDuration;
                 player.heldItem = item;
                 item.onPickup();
             }
@@ -397,6 +401,14 @@ function update(deltaTime) {
     // 更新軌跡
     player.trail.forEach(p => p.life -= deltaTime * 4);
     player.trail = player.trail.filter(p => p.life > 0);
+
+    // 更新 inventory 動畫計時器
+    const anim = gameState.inventoryAnim;
+    if (anim.enterTimer > 0) anim.enterTimer -= deltaTime;
+    if (anim.exitTimer > 0) {
+        anim.exitTimer -= deltaTime;
+        if (anim.exitTimer <= 0) anim.exitIcon = null;
+    }
 
     // 更新道具
     gameState.activeItems.forEach(item => item.update(deltaTime));

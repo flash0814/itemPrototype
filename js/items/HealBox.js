@@ -22,27 +22,55 @@ export class HealBox extends ItemBase {
     // 從持有狀態丟出啟動
     activate() {
         this.isActivated = true;
-        this.duration = this.maxTicks * this.tickRate;
+        // 啟動後不用 duration 計時，改由 tick 完成 + pulse 結束來判斷死亡
+        this.duration = 0; // 0 = 不走 duration 倒數
         this.lifeTimer = 0;
         this.ticksPerformed = 0;
         this.tickTimer = 0;
     }
 
     onDurationEnd() {
-        if (this.isActivated) {
-            if (this.pulseTime <= 0) this.isDead = true;
-        } else {
+        // 只有地上狀態（未啟動）才用 duration 死亡
+        if (!this.isActivated) {
             this.isDead = true;
         }
     }
 
     update(dt) {
+        // 物理更新（落地前）
+        if (!this.isGrounded) {
+            // 只跑 ItemBase 的物理部分，不計時
+            if (!this.isGrounded) {
+                this.vz += this.gravity * dt;
+                this.z -= this.vz * dt;
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                if (this.z <= 0) {
+                    this.z = 0;
+                    this.vz = -this.vz * this.bounciness;
+                    this.vx *= 0.6;
+                    this.vy *= 0.6;
+                    if (Math.abs(this.vz) < 100) {
+                        this.vz = 0;
+                        this.vx = 0;
+                        this.vy = 0;
+                        this.isGrounded = true;
+                    }
+                }
+            }
+            return; // 落地前不計時
+        }
+
+        // 落地後才走 ItemBase 的 duration 計時
         super.update(dt);
         if (this.isHeld) return;
 
         if (this.pulseTime > 0) this.pulseTime -= dt;
 
-        // 只有啟動後才執行治療邏輯
+        // 只有啟動且落地後才執行治療邏輯
         if (this.isActivated) {
             if (this.ticksPerformed < this.maxTicks) {
                 this.tickTimer += dt;
@@ -51,11 +79,8 @@ export class HealBox extends ItemBase {
                     this.triggerTick();
                     this.ticksPerformed++;
                 }
-            }
-
-            if (this.pulseTime > 0 && this.duration !== 0 && this.lifeTimer >= this.duration) {
-                // 等待脈衝完成
-            } else if (this.duration !== 0 && this.lifeTimer >= this.duration) {
+            } else if (this.pulseTime <= 0) {
+                // 所有 tick 完成且最後一個 pulse 也結束
                 this.isDead = true;
             }
         }

@@ -5,7 +5,7 @@ export const GAME_STATE_MODE = { ROAMING: 0, AIMING: 1 };
 
 export const gameState = {
     currentMode: GAME_STATE_MODE.ROAMING,
-    currentItemType: 'HealPack',
+    currentItemType: 'HealBox',
     currentPlayerSettingType: 'PlayerStatus',
 
     // 畫布尺寸
@@ -17,7 +17,18 @@ export const gameState = {
     activeItems: [],
     projectiles: [],
     floatingTexts: [],
-    particles: []
+    particles: [],
+
+    // Inventory UI 動畫狀態
+    inventoryAnim: {
+        // 新道具進入動畫
+        enterTimer: 0,
+        enterDuration: 0.3,
+        // 舊道具離開動畫
+        exitTimer: 0,
+        exitDuration: 0.4,
+        exitIcon: null // 暫存舊道具的 drawIcon 引用
+    }
 };
 
 export const editorState = {
