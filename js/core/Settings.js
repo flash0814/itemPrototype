@@ -64,7 +64,8 @@ export const SETTINGS = {
         counts: 5,
         radius: 170,
         value: 25,
-        tick: 1
+        tick: 1,
+        waitToBackZoom: 2
     },
 
     itemEnergyDrink: {
@@ -83,7 +84,8 @@ export const SETTINGS = {
         radius: 250,
         meteorSpeed: 800,
         meteorAltitude: 600,
-        meteorAngle: 45
+        meteorAngle: 45,
+        waitToBackZoom: 1.2
     },
 
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
@@ -112,6 +114,7 @@ export const SETTINGS = {
         initialZoom: 1.0,
         zoomMin: 0.3,
         zoomMax: 3.0,
-        zoomSpeed: 0.1
+        zoomStep: 0.1,
+        autoZoomTime: 1.0    // 自動 zoom 動畫時間（秒）
     }
 };
