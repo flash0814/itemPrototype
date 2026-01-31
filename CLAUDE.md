@@ -75,16 +75,17 @@ SETTINGS.worldConfig = {
 
 SETTINGS.cameraConfig = {
     initialZoom: 1.0,
-    zoomMin: 0.3,    // 最遠（看到更多世界）
-    zoomMax: 3.0,    // 最近
-    zoomSpeed: 0.1   // 每次滾輪的縮放比例
+    zoomMin: 0.3,      // 手動滾輪最遠（auto zoom 可突破）
+    zoomMax: 3.0,      // 最近
+    zoomStep: 0.1,     // 每次滾輪的線性步進量
+    autoZoomTime: 1.0  // auto zoom 動畫時間（秒）
 }
 ```
 
 ### 狀態（GameState）
 
 - `gameState.world` — `{ width, height }` 世界尺寸
-- `gameState.camera` — `{ x, y, zoom }` 攝影機中心位置與縮放
+- `gameState.camera` — `{ x, y, zoom, targetZoom, autoZoom }` 攝影機中心位置、縮放與自動縮放狀態
 - `input.mouse.screenX/screenY` — 螢幕座標（用於 HUD 互動）
 - `input.mouse.x/y` — 世界座標（透過 `screenToWorld()` 自動轉換）
 
@@ -96,7 +97,10 @@ SETTINGS.cameraConfig = {
 | `applyCameraTransform(ctx)` | 繪製世界物件前呼叫，設置 ctx 變換 |
 | `restoreCameraTransform(ctx)` | 繪製世界物件後呼叫，還原 ctx |
 | `screenToWorld(sx, sy)` | 螢幕座標 → 世界座標 |
-| `applyZoom(delta)` | 滾輪縮放，delta>0 縮小 / delta<0 放大 |
+| `applyZoom(delta)` | 滾輪縮放（線性步進），delta>0 縮小 / delta<0 放大 |
+| `updateZoom(dt)` | 每幀：auto zoom 動畫 / waitTimer 倒數 / lerp 追趕 targetZoom |
+| `calcZoomForRadius(r)` | 計算讓半徑 r 的圈完全可見所需的 zoom 值 |
+| `startAutoZoom(zoom, dur)` | 啟動 auto zoom 動畫（smoothstep ease-in-out） |
 
 ### 繪製順序
 
@@ -118,6 +122,26 @@ draw():
 ### 攝影機夾邊
 
 當視窗可見範圍小於世界時，攝影機中心被夾在 `[viewW/2, world.width - viewW/2]`，確保不超出世界邊界。當縮小到可見範圍大於世界時，攝影機居中。
+
+### Zoom 系統
+
+**手動縮放（滾輪）：**
+- 線性步進：`targetZoom ± zoomStep`（def 0.1），`Math.round` 確保精確小數 2 位
+- `cam.zoom` 每幀 lerp 追趕 `targetZoom`，產生平滑過渡
+- 範圍限制：`zoomMin` (0.3) ~ `zoomMax` (3.0)
+
+**Auto Zoom（ACTIVE 道具瞄準時）：**
+- 按 F 進入 aiming → 記錄 `prevZoom`（滾輪乾淨值）→ 若當前視野看不到整個 `maxAimRadius` 綠圈，自動拉遠
+- Auto zoom 可突破 `zoomMin`（手動滾輪仍受限）
+- 動畫：smoothstep ease-in-out，固定 `autoZoomTime` 秒（def 1.0）
+- 取消 aiming（再按 F）→ 1 秒回復 `prevZoom`
+- LMB 丟出 → 等 `waitToBackZoom` 秒（每個 ACTIVE item 各自設定）→ 1 秒回復 `prevZoom`
+- `targetZoom` 在 auto zoom 期間不被 sync，保持滾輪乾淨值，避免快速 FFF 造成 zoom 漂移
+
+**設計要點：**
+- `targetZoom` 永遠是精確的滾輪步進值，不受 auto zoom 動畫污染
+- `prevZoom` 存的是 `targetZoom`（乾淨值），確保回復後完全一致
+- Auto zoom 結束後 lerp 追趕 `targetZoom`，兩者匯合
 
 ### 瀏覽器 resize
 
