@@ -4,8 +4,7 @@ import { player } from '../entities/Player.js';
 
 export class HealBox extends ItemBase {
     constructor(x, y) {
-        // 地上狀態用 groundDuration
-        super(x, y, SETTINGS.itemHealBox.groundDuration);
+        super(x, y, SETTINGS.itemHealBox.duration);
 
         this.category = 'ACTIVE';
         this.maxAimRadius = SETTINGS.itemHealBox.maxAimRadius;
@@ -22,18 +21,8 @@ export class HealBox extends ItemBase {
     // 從持有狀態丟出啟動
     activate() {
         this.isActivated = true;
-        // 啟動後不用 duration 計時，改由 tick 完成 + pulse 結束來判斷死亡
-        this.duration = 0; // 0 = 不走 duration 倒數
-        this.lifeTimer = 0;
         this.ticksPerformed = 0;
         this.tickTimer = 0;
-    }
-
-    onDurationEnd() {
-        // 只有地上狀態（未啟動）才用 duration 死亡
-        if (!this.isActivated) {
-            this.isDead = true;
-        }
     }
 
     update(dt) {

@@ -28,8 +28,8 @@ export class ItemBase {
         // 持有中不更新
         if (this.isHeld) return;
 
-        // Duration 倒數（0 = 永久）
-        if (this.duration !== 0 && this.duration !== -1) {
+        // Duration 倒數（0 = 永久，啟動後由子類自行控制死亡）
+        if (!this.isActivated && this.duration !== 0 && this.duration !== -1) {
             this.lifeTimer += dt;
             if (this.lifeTimer >= this.duration) {
                 this.onDurationEnd();

@@ -112,7 +112,7 @@ export function initSettingsPanel() {
     inputs.healRad.addEventListener('change', (e) => SETTINGS.itemHealBox.radius = Number(e.target.value));
     inputs.healVal.addEventListener('change', (e) => SETTINGS.itemHealBox.value = Number(e.target.value));
     inputs.healTick.addEventListener('change', (e) => SETTINGS.itemHealBox.tick = Number(e.target.value));
-    inputs.healboxDur.addEventListener('change', (e) => SETTINGS.itemHealBox.groundDuration = Number(e.target.value));
+    inputs.healboxDur.addEventListener('change', (e) => SETTINGS.itemHealBox.duration = Number(e.target.value));
 
     // --- HealPack ---
     inputs.packDur.addEventListener('change', (e) => SETTINGS.itemHealPack.duration = Number(e.target.value));

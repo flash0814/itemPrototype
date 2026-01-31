@@ -144,8 +144,8 @@ resize 只改變畫布像素尺寸（viewport），不影響世界物件的位�
 
 ### HealBox 雙狀態
 
-- **地上（未啟動）**：用 `groundDuration` 計時，到期消失
-- **丟出（已啟動 isActivated）**：`duration=0` 停止倒數，改用 tick 完成 + pulse 結束判定死亡
+- **地上（未啟動）**：用 `duration` 計時，到期消失（0=永久）
+- **丟出（已啟動 isActivated）**：ItemBase 自動跳過 duration 倒數（`!isActivated` 條件），改由 tick 完成 + pulse 結束判定死亡
 - 落地前不計時：HealBox 覆寫 `update()`，未落地時只跑物理，不執行 `super.update()` 和 tick 邏輯
 
 ### 道具交換（swap）
@@ -191,7 +191,7 @@ grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|
 
 **症狀**：maxTicks=5 但只看到 4 次視覺 pulse。
 **原因**：啟動時 `duration = counts * tickRate = 5s`，`onDurationEnd()` 在第 5 秒同時觸發 isDead，第 5 次 tick 的 pulse 動畫來不及播放。
-**修復**：啟動後設 `duration=0`（停止 duration 倒數），改用 `ticksPerformed >= maxTicks && pulseTime <= 0` 判定死亡。
+**修復**：ItemBase 的 duration 倒數加入 `!isActivated` 條件，啟動後自動跳過。改用 `ticksPerformed >= maxTicks && pulseTime <= 0` 判定死亡。
 
 ### 3. HealBox tick 在飛行中就開始計時
 
