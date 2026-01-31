@@ -1,7 +1,7 @@
 import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
-import { player } from '../entities/Player.js';
+import { player, updateEnergy } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
@@ -322,6 +322,9 @@ function update(deltaTime) {
 
     if (player.damageShakeTimer > 0) player.damageShakeTimer -= deltaTime;
     if (player.damageFlashTimer > 0) player.damageFlashTimer -= deltaTime;
+
+    // 更新 energy
+    updateEnergy(deltaTime);
 
     // 編輯器拖曳
     if (editorState.draggingObj) {

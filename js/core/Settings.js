@@ -36,6 +36,7 @@ export const SETTINGS = {
         textDmg: '#ff3333',
         shadow: 'rgba(0, 0, 0, 0.5)',
         fireTrap: 'rgba(255, 60, 0, 0.3)',
+        energy: '#c8a832',
         rocket: '#ffaa00',
         rocketExplosion: 'rgba(255, 100, 0, 0.8)'
     },
@@ -43,7 +44,10 @@ export const SETTINGS = {
     general: {
         maxPlayerHP: 250,
         fireTrapDmg: 50,
-        fireTrapTick: 0.7
+        fireTrapTick: 0.7,
+        maxEnergy: 100,
+        defEnergy: 100,
+        energyRecoverRate: 20
     },
 
     attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4 },

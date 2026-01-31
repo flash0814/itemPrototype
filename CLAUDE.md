@@ -123,6 +123,29 @@ draw():
 
 resize 只改變畫布像素尺寸（viewport），不影響世界物件的位置或大小。場景物件位置由 `worldConfig` 固定。
 
+## Energy 系統
+
+### 狀態（Player.js）
+
+- `maxEnergy` / `currentEnergy` — 實際值
+- `displayEnergy` — 每幀 lerp 追趕 `currentEnergy`，用於 gauge 繪製（smooth 增減）
+- `energyRecoverRate` — 每秒回復量（存在 player 上，方便 buff/debuff 修改倍率）
+- `energyRecoverCD` — 回復硬直倒數（秒），> 0 時暫停自動回復（未來 skill 用）
+- `energyRecoverBlocked` — debuff 可暫停回復（未來用）
+
+### API（Player.js export）
+
+| 函式 | 用途 |
+|------|------|
+| `updateEnergy(dt)` | 每幀呼叫：CD 倒數 → 自動回復 → displayEnergy lerp |
+| `consumeEnergy(amount, recoverCD?)` | 扣 energy，return bool；可選設回復硬直 |
+
+### UI
+
+- Energy gauge 在 HP bar 正下方（世界空間，跟隨玩家）
+- 顏色：`SETTINGS.colors.energy`（金黃色）
+- smooth 機制：`displayEnergy` 用 `lerp(display, current, 1 - e^(-10*dt))` 追趕
+
 ## 道具系統
 
 ### 分類

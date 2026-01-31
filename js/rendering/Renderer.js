@@ -292,6 +292,21 @@ export function drawPlayerHPBar(ctx) {
     ctx.lineWidth = 1;
     ctx.strokeRect(-barW / 2 - 1, yOffset - 1, barW + 2, barH + 2);
 
+    // Energy bar（HP 正下方）
+    const energyBarH = 4;
+    const energyY = yOffset + barH + 3;
+    const energyPct = player.displayEnergy / player.maxEnergy;
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-barW / 2 - 1, energyY - 1, barW + 2, energyBarH + 2);
+
+    ctx.fillStyle = SETTINGS.colors.energy;
+    ctx.fillRect(-barW / 2, energyY, barW * energyPct, energyBarH);
+
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-barW / 2 - 1, energyY - 1, barW + 2, energyBarH + 2);
+
     ctx.restore();
 }
 

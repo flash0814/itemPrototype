@@ -18,8 +18,42 @@ export const player = {
     invincibleTimer: 0,
     maxInvincibleTimer: 0,
     defendRatio: 1,
-    heldItem: null
+    heldItem: null,
+
+    // Energy
+    maxEnergy: SETTINGS.general.maxEnergy,
+    currentEnergy: SETTINGS.general.defEnergy,
+    displayEnergy: SETTINGS.general.defEnergy,
+    energyRecoverRate: SETTINGS.general.energyRecoverRate,
+    energyRecoverCD: 0,
+    energyRecoverBlocked: false
 };
+
+// 更新 energy（每幀呼叫）
+export function updateEnergy(dt) {
+    // 回復硬直倒數
+    if (player.energyRecoverCD > 0) {
+        player.energyRecoverCD -= dt;
+    } else if (!player.energyRecoverBlocked && player.currentEnergy < player.maxEnergy) {
+        // 自動回復
+        player.currentEnergy = Math.min(
+            player.maxEnergy,
+            player.currentEnergy + player.energyRecoverRate * dt
+        );
+    }
+
+    // displayEnergy smooth 追趕 currentEnergy
+    const lerpSpeed = 1 - Math.exp(-10 * dt);
+    player.displayEnergy += (player.currentEnergy - player.displayEnergy) * lerpSpeed;
+}
+
+// 消耗 energy，成功 return true
+export function consumeEnergy(amount, recoverCD = 0) {
+    if (player.currentEnergy < amount) return false;
+    player.currentEnergy -= amount;
+    if (recoverCD > 0) player.energyRecoverCD = recoverCD;
+    return true;
+}
 
 // 治療玩家
 export function healPlayer(amount) {
