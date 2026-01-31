@@ -50,6 +50,8 @@ export const SETTINGS = {
         energyRecoverRate: 20
     },
 
+    itemDropRange: 300,
+
     attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4, energyCost: 10 },
 
     itemHealBox: {

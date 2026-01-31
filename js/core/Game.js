@@ -209,17 +209,35 @@ function tryThrowItem() {
 function spawnItem() {
     const maxAttempts = 10;
     const wallT = SETTINGS.worldConfig.wallThickness;
-    const padding = wallT + 30;
+    const range = SETTINGS.itemDropRange;
+    const margin = wallT + 30;
 
     for (let i = 0; i < maxAttempts; i++) {
-        const rx = padding + Math.random() * (gameState.world.width - padding * 2);
-        const ry = padding + Math.random() * (gameState.world.height - padding * 2);
+        // 以玩家為中心，隨機角度和距離
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * range;
+        let rx = player.x + Math.cos(angle) * dist;
+        let ry = player.y + Math.sin(angle) * dist;
 
+        // 夾在可活動區域內
+        rx = Math.max(margin, Math.min(gameState.world.width - margin, rx));
+        ry = Math.max(margin, Math.min(gameState.world.height - margin, ry));
+
+        // 不與場景物件重疊
         let overlap = false;
         for (let obj of gameState.fieldObjects) {
             if (checkCollisionWithRect(rx, ry, 15, obj)) {
                 overlap = true;
                 break;
+            }
+        }
+
+        // 不與玩家重疊
+        if (!overlap) {
+            const dx = rx - player.x;
+            const dy = ry - player.y;
+            if (dx * dx + dy * dy < (SETTINGS.playerSize + 15) * (SETTINGS.playerSize + 15)) {
+                overlap = true;
             }
         }
 
