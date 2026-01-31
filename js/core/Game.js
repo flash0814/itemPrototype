@@ -2,6 +2,7 @@ import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
 import { player } from '../entities/Player.js';
+import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
 import { Rocket } from '../projectiles/Rocket.js';
@@ -103,6 +104,21 @@ export function initGame() {
         gameState.fieldObjects.push(new FireTrap(t.x, t.y));
     }
 
+    // 邊界牆（isSolid，不繪製 — Renderer 負責視覺）
+    const ww = wc.width, wh = wc.height, wt = wc.wallThickness;
+    const wallDefs = [
+        [0, 0, ww, wt],            // 上
+        [0, wh - wt, ww, wt],      // 下
+        [0, wt, wt, wh - wt * 2],  // 左
+        [ww - wt, wt, wt, wh - wt * 2] // 右
+    ];
+    for (const [wx, wy, wWidth, wHeight] of wallDefs) {
+        const wall = new FieldObject(wx, wy, wWidth, wHeight, 'Wall');
+        wall.isSolid = true;
+        wall.draw = () => {}; // 視覺由 Renderer.drawWorldBounds 處理
+        gameState.fieldObjects.push(wall);
+    }
+
     // 設定玩家初始位置
     player.x = wc.playerStart.x;
     player.y = wc.playerStart.y;
@@ -194,7 +210,8 @@ function tryThrowItem() {
 
 function spawnItem() {
     const maxAttempts = 10;
-    const padding = 50;
+    const wallT = SETTINGS.worldConfig.wallThickness;
+    const padding = wallT + 30;
 
     for (let i = 0; i < maxAttempts; i++) {
         const rx = padding + Math.random() * (gameState.world.width - padding * 2);
@@ -324,6 +341,11 @@ function update(deltaTime) {
                 break;
             }
         }
+        // 檢查是否與玩家重疊
+        if (obj.isValidPlacement && obj.isSolid &&
+            checkCollisionWithRect(player.x, player.y, SETTINGS.playerSize, obj)) {
+            obj.isValidPlacement = false;
+        }
     }
 
     // 玩家移動
@@ -343,10 +365,11 @@ function update(deltaTime) {
 
             const moveDist = SETTINGS.playerSpeed * deltaTime;
             const margin = SETTINGS.playerSize;
+            const wallT = SETTINGS.worldConfig.wallThickness;
 
-            // X 軸移動
+            // X 軸移動（邊界 = 牆內側 + 玩家半徑）
             let nextX = player.x + dx * moveDist;
-            nextX = Math.max(margin, Math.min(gameState.world.width - margin, nextX));
+            nextX = Math.max(wallT + margin, Math.min(gameState.world.width - wallT - margin, nextX));
 
             let collideX = false;
             for (let obj of gameState.fieldObjects) {
@@ -359,7 +382,7 @@ function update(deltaTime) {
 
             // Y 軸移動
             let nextY = player.y + dy * moveDist;
-            nextY = Math.max(margin, Math.min(gameState.world.height - margin, nextY));
+            nextY = Math.max(wallT + margin, Math.min(gameState.world.height - wallT - margin, nextY));
 
             let collideY = false;
             for (let obj of gameState.fieldObjects) {

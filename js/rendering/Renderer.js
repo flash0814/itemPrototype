@@ -87,13 +87,67 @@ export function drawGrid(ctx) {
     ctx.stroke();
 }
 
-// 繪製世界邊界
+// 繪製單面牆段
+function drawWallSegment(ctx, x, y, w, h, innerEdge) {
+    // innerEdge: 'bottom' | 'top' | 'right' | 'left' — 面向場內的邊
+
+    // 主體
+    ctx.fillStyle = SETTINGS.colors.wallBase;
+    ctx.fillRect(x, y, w, h);
+
+    // 面向場內的高光邊（光源感）
+    ctx.fillStyle = SETTINGS.colors.wallHighlight;
+    if (innerEdge === 'bottom') ctx.fillRect(x, y + h - 2, w, 2);
+    else if (innerEdge === 'top') ctx.fillRect(x, y, w, 2);
+    else if (innerEdge === 'right') ctx.fillRect(x + w - 2, y, 2, h);
+    else if (innerEdge === 'left') ctx.fillRect(x, y, 2, h);
+
+    // 表面紋理
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const step = 16;
+    if (innerEdge === 'top' || innerEdge === 'bottom') {
+        for (let ly = y + step; ly < y + h; ly += step) {
+            ctx.moveTo(x, ly);
+            ctx.lineTo(x + w, ly);
+        }
+    } else {
+        for (let lx = x + step; lx < x + w; lx += step) {
+            ctx.moveTo(lx, y);
+            ctx.lineTo(lx, y + h);
+        }
+    }
+    ctx.stroke();
+
+    // 內邊框線
+    ctx.strokeStyle = SETTINGS.colors.wallBorder;
+    ctx.lineWidth = 1.5;
+    if (innerEdge === 'bottom') {
+        ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+    } else if (innerEdge === 'top') {
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+    } else if (innerEdge === 'right') {
+        ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.stroke();
+    } else if (innerEdge === 'left') {
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke();
+    }
+}
+
+// 繪製世界邊界（四面厚牆）
 export function drawWorldBounds(ctx) {
-    const w = gameState.world.width;
-    const h = gameState.world.height;
-    ctx.strokeStyle = '#ff3333';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, w, h);
+    const ww = gameState.world.width;
+    const wh = gameState.world.height;
+    const t = SETTINGS.worldConfig.wallThickness;
+
+    // 上牆
+    drawWallSegment(ctx, 0, 0, ww, t, 'bottom');
+    // 下牆
+    drawWallSegment(ctx, 0, wh - t, ww, t, 'top');
+    // 左牆
+    drawWallSegment(ctx, 0, t, t, wh - t * 2, 'right');
+    // 右牆
+    drawWallSegment(ctx, ww - t, t, t, wh - t * 2, 'left');
 }
 
 // 繪製玩家軌跡

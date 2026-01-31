@@ -38,8 +38,8 @@ export class FieldObject {
     }
 
     setPosition(nx, ny) {
-        const clampedX = Math.max(0, Math.min(gameState.width - this.width, nx));
-        const clampedY = Math.max(0, Math.min(gameState.height - this.height, ny));
+        const clampedX = Math.max(0, Math.min(gameState.world.width - this.width, nx));
+        const clampedY = Math.max(0, Math.min(gameState.world.height - this.height, ny));
         this.x = clampedX;
         this.y = clampedY;
     }

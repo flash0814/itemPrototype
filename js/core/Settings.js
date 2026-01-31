@@ -12,8 +12,13 @@ export const SETTINGS = {
         grid: '#23232a',
         player: '#00f3ff',
         playerShadow: 'rgba(0, 243, 255, 0.6)',
-        obstacle: '#2d2d35',
-        obstacleBorder: '#4a4a55',
+        obstacle: '#2a2a32',
+        obstacleBorder: '#3e3e4a',
+        obstacleHighlight: 'rgba(255, 255, 255, 0.04)',
+        obstacleShadowInner: 'rgba(0, 0, 0, 0.3)',
+        wallBase: '#33333d',
+        wallBorder: '#4a4a56',
+        wallHighlight: 'rgba(255, 255, 255, 0.05)',
         aimRange: 'rgba(50, 255, 100, 0.6)',
         aimValid: '#00ff00',
         aimInvalid: '#ff0000',
@@ -56,11 +61,12 @@ export const SETTINGS = {
     itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
 
     worldConfig: {
-        width: 2500,
-        height: 2500,
-        playerStart: { x: 300, y: 300 },
-        obstacles: [{ x: 400, y: 400, size: 200 }],
-        fireTraps: [{ x: 80, y: 80 }]
+        width: 2200,
+        height: 1600,
+        wallThickness: 200,
+        playerStart: { x: 400, y: 400 },
+        obstacles: [{ x: 600, y: 600, size: 200 }],
+        fireTraps: [{ x: 300, y: 300 }]
     },
 
     cameraConfig: {
