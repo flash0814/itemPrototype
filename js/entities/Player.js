@@ -55,6 +55,21 @@ export function consumeEnergy(amount, recoverCD = 0) {
     return true;
 }
 
+// 恢復 energy
+export function restoreEnergy(amount) {
+    player.currentEnergy = Math.min(player.maxEnergy, player.currentEnergy + amount);
+    gameState.floatingTexts.push(
+        new FloatingText(player.x, player.y, `+${amount} EP`, {
+            color: '#e8c828',
+            offsetY: 45,
+            spreadX: 10
+        })
+    );
+    for (let i = 0; i < 6; i++) {
+        gameState.particles.push(new Particle(player.x, player.y, 'energy'));
+    }
+}
+
 // 治療玩家
 export function healPlayer(amount) {
     player.currentHp = Math.min(player.maxHp, player.currentHp + amount);

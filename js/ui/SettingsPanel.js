@@ -32,7 +32,15 @@ export const inputs = {
     starGroup: null,
     starDur: null,
     starEffect: null,
-    starDef: null
+    starDef: null,
+    // EnergyDrink
+    edrinkGroup: null,
+    edrinkDur: null,
+    edrinkInstant: null,
+    edrinkTicks: null,
+    edrinkPerTick: null,
+    edrinkTickRate: null,
+    edrinkWait: null
 };
 
 export function initSettingsPanel() {
@@ -64,6 +72,13 @@ export function initSettingsPanel() {
     inputs.starDur = document.getElementById('inp-star-dur');
     inputs.starEffect = document.getElementById('inp-star-effect');
     inputs.starDef = document.getElementById('inp-star-def');
+    inputs.edrinkGroup = document.getElementById('group-energydrink');
+    inputs.edrinkDur = document.getElementById('inp-edrink-dur');
+    inputs.edrinkInstant = document.getElementById('inp-edrink-instant');
+    inputs.edrinkTicks = document.getElementById('inp-edrink-ticks');
+    inputs.edrinkPerTick = document.getElementById('inp-edrink-pertick');
+    inputs.edrinkTickRate = document.getElementById('inp-edrink-tickrate');
+    inputs.edrinkWait = document.getElementById('inp-edrink-wait');
 
     // --- Player Settings ---
     inputs.playerSettingsSelect.addEventListener('change', (e) => {
@@ -96,6 +111,7 @@ export function initSettingsPanel() {
         inputs.healboxGroup.classList.add('hidden');
         inputs.packGroup.classList.add('hidden');
         inputs.starGroup.classList.add('hidden');
+        inputs.edrinkGroup.classList.add('hidden');
 
         if (e.target.value === 'HealBox') {
             inputs.healboxGroup.classList.remove('hidden');
@@ -103,6 +119,8 @@ export function initSettingsPanel() {
             inputs.packGroup.classList.remove('hidden');
         } else if (e.target.value === 'InvincibleStar') {
             inputs.starGroup.classList.remove('hidden');
+        } else if (e.target.value === 'EnergyDrink') {
+            inputs.edrinkGroup.classList.remove('hidden');
         }
     });
 
@@ -122,4 +140,12 @@ export function initSettingsPanel() {
     inputs.starDur.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.duration = Number(e.target.value));
     inputs.starEffect.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.effectDuration = Number(e.target.value));
     inputs.starDef.addEventListener('change', (e) => SETTINGS.itemInvincibleStar.defendRatio = Number(e.target.value));
+
+    // --- EnergyDrink ---
+    inputs.edrinkDur.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.duration = Number(e.target.value));
+    inputs.edrinkInstant.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.instantPlus = Number(e.target.value));
+    inputs.edrinkTicks.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.totalTicks = Math.max(0, parseInt(e.target.value)));
+    inputs.edrinkPerTick.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.perTickPlus = Number(e.target.value));
+    inputs.edrinkTickRate.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.tickRate = Number(e.target.value));
+    inputs.edrinkWait.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.waitToFirstTick = Number(e.target.value));
 }

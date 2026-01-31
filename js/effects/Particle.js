@@ -18,6 +18,11 @@ export class Particle {
             this.vy = Math.sin(angle) * speed;
             this.size = 4 + Math.random() * 4;
             this.color = '#ffaa00';
+        } else if (type === 'energy') {
+            this.vx = (Math.random() - 0.5) * 20;
+            this.vy = -60 - Math.random() * 60;
+            this.size = 3 + Math.random() * 2;
+            this.color = '#e8c828';
         } else if (type === 'damage') {
             this.vx = (Math.random() - 0.5) * 20;
             this.vy = -30 - Math.random() * 50;
@@ -57,6 +62,18 @@ export class Particle {
             ctx.translate(this.x, this.y);
             ctx.fillRect(-s, -thick / 2, s * 2, thick);
             ctx.fillRect(-thick / 2, -s, thick, s * 2);
+        } else if (this.type === 'energy') {
+            const s = this.size;
+            ctx.translate(this.x, this.y);
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.3, -s);
+            ctx.lineTo(s * 0.2, -s * 0.1);
+            ctx.lineTo(-s * 0.1, -s * 0.1);
+            ctx.lineTo(s * 0.3, s);
+            ctx.lineTo(-s * 0.2, s * 0.1);
+            ctx.lineTo(s * 0.1, s * 0.1);
+            ctx.closePath();
+            ctx.fill();
         } else {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);

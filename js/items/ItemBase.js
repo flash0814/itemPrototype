@@ -19,7 +19,7 @@ export class ItemBase {
         // 道具系統屬性
         this.category = 'PASSIVE';
         this.maxAimRadius = 0;
-        this.pickupRadius = 15;
+        this.pickupRadius = 10;
         this.isHeld = false;
         this.isActivated = false;
     }

@@ -37,6 +37,8 @@ export const SETTINGS = {
         shadow: 'rgba(0, 0, 0, 0.5)',
         fireTrap: 'rgba(255, 60, 0, 0.3)',
         energy: '#c8a832',
+        energyDrink: '#e8c828',
+        energyDrinkGlow: 'rgba(232, 200, 40, 0.6)',
         rocket: '#ffaa00',
         rocketExplosion: 'rgba(255, 100, 0, 0.8)'
     },
@@ -61,6 +63,15 @@ export const SETTINGS = {
         radius: 170,
         value: 25,
         tick: 1
+    },
+
+    itemEnergyDrink: {
+        duration: 10,
+        instantPlus: 0,
+        totalTicks: 5,
+        perTickPlus: 10,
+        tickRate: 0.8,
+        waitToFirstTick: 0.4
     },
 
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },

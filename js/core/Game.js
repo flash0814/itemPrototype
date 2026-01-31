@@ -1,7 +1,7 @@
 import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
-import { player, updateEnergy, consumeEnergy } from '../entities/Player.js';
+import { player, updateEnergy, consumeEnergy, restoreEnergy } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
@@ -9,6 +9,7 @@ import { Rocket } from '../projectiles/Rocket.js';
 import { HealBox } from '../items/HealBox.js';
 import { HealPack } from '../items/HealPack.js';
 import { InvincibleStar } from '../items/InvincibleStar.js';
+import { EnergyDrink } from '../items/EnergyDrink.js';
 import { initSettingsPanel } from '../ui/SettingsPanel.js';
 import {
     drawGrid,
@@ -250,6 +251,8 @@ function spawnItem() {
                 newItem = new InvincibleStar(rx, ry);
             } else if (gameState.currentItemType === 'HealBox') {
                 newItem = new HealBox(rx, ry);
+            } else if (gameState.currentItemType === 'EnergyDrink') {
+                newItem = new EnergyDrink(rx, ry);
             }
             if (newItem) gameState.activeItems.push(newItem);
             return;
@@ -346,6 +349,22 @@ function update(deltaTime) {
 
     // 更新 energy
     updateEnergy(deltaTime);
+
+    // 更新 EnergyDrink buff ticks
+    if (gameState.energyDrinkBuffs) {
+        for (let i = gameState.energyDrinkBuffs.length - 1; i >= 0; i--) {
+            const buff = gameState.energyDrinkBuffs[i];
+            buff.timer -= deltaTime;
+            if (buff.timer <= 0 && buff.ticksRemaining > 0) {
+                restoreEnergy(buff.perTickPlus);
+                buff.ticksRemaining--;
+                buff.timer = buff.tickRate;
+            }
+            if (buff.ticksRemaining <= 0) {
+                gameState.energyDrinkBuffs.splice(i, 1);
+            }
+        }
+    }
 
     // 編輯器拖曳
     if (editorState.draggingObj) {

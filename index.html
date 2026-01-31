@@ -84,6 +84,7 @@
                     <option value="HealBox">HealBox (治療箱)</option>
                     <option value="HealPack">HealPack (補血包)</option>
                     <option value="InvincibleStar">InvincibleStar (無敵星)</option>
+                    <option value="EnergyDrink">EnergyDrink (能量飲料)</option>
                 </select>
 
                 <!-- HealBox Settings -->
@@ -139,6 +140,34 @@
                     <div class="input-row">
                         <label>Def Ratio</label>
                         <input type="number" id="inp-star-def" value="0" step="0.1" title="0 = No Damage">
+                    </div>
+                </div>
+
+                <!-- EnergyDrink Settings -->
+                <div id="group-energydrink" class="hidden">
+                    <div class="input-row">
+                        <label>Duration (s)</label>
+                        <input type="number" id="inp-edrink-dur" value="10" step="1" title="0 = permanent">
+                    </div>
+                    <div class="input-row">
+                        <label>Instant Plus</label>
+                        <input type="number" id="inp-edrink-instant" value="0" step="5">
+                    </div>
+                    <div class="input-row">
+                        <label>Total Ticks</label>
+                        <input type="number" id="inp-edrink-ticks" value="5" step="1">
+                    </div>
+                    <div class="input-row">
+                        <label>Per Tick Plus</label>
+                        <input type="number" id="inp-edrink-pertick" value="10" step="1">
+                    </div>
+                    <div class="input-row">
+                        <label>Tick Rate (s)</label>
+                        <input type="number" id="inp-edrink-tickrate" value="0.8" step="0.1">
+                    </div>
+                    <div class="input-row">
+                        <label>Wait 1st Tick (s)</label>
+                        <input type="number" id="inp-edrink-wait" value="0.4" step="0.1">
                     </div>
                 </div>
             </div>
