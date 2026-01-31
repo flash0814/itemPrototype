@@ -50,7 +50,7 @@ export const SETTINGS = {
         energyRecoverRate: 20
     },
 
-    attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4 },
+    attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4, energyCost: 10 },
 
     itemHealBox: {
         maxAimRadius: 200,

@@ -1,7 +1,7 @@
 import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
-import { player, updateEnergy } from '../entities/Player.js';
+import { player, updateEnergy, consumeEnergy } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
@@ -78,7 +78,9 @@ export function initGame() {
             if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
                 tryThrowItem();
             } else if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
-                fireRocket(player.x, player.y, input.mouse.x, input.mouse.y);
+                if (consumeEnergy(SETTINGS.attackRocket.energyCost)) {
+                    fireRocket(player.x, player.y, input.mouse.x, input.mouse.y);
+                }
             }
         } else if (e.button === 1) { // 中鍵 (拖曳/複製)
             e.preventDefault();
