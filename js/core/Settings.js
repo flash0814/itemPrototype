@@ -60,11 +60,21 @@ export const SETTINGS = {
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
     itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
 
+    // 跳字全域預設值
+    floatingText: {
+        life: 1.0,          // 持續時間（秒）
+        speedY: 50,         // 上飄速度（px/s）
+        font: 'bold 24px Arial',
+        fadeStyle: 'linear', // 'linear' | 'late'（late = 前半段不透明，後半段快速淡出）
+        scale: 1.0,          // 初始縮放
+        spreadX: 0,          // 水平隨機散開範圍（px）
+    },
+
     worldConfig: {
         width: 2200,
         height: 1600,
         wallThickness: 200,
-        playerStart: { x: 400, y: 400 },
+        playerStart: { x: 500, y: 500 },
         obstacles: [{ x: 600, y: 600, size: 200 }],
         fireTraps: [{ x: 300, y: 300 }]
     },

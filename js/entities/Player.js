@@ -25,7 +25,11 @@ export const player = {
 export function healPlayer(amount) {
     player.currentHp = Math.min(player.maxHp, player.currentHp + amount);
     gameState.floatingTexts.push(
-        new FloatingText(player.x, player.y - 30, `+${amount}`, SETTINGS.colors.textHeal)
+        new FloatingText(player.x, player.y, `+${amount}`, {
+            color: SETTINGS.colors.textHeal,
+            offsetY: 30,
+            spreadX: 10
+        })
     );
     for (let i = 0; i < 8; i++) {
         gameState.particles.push(new Particle(player.x, player.y, 'heal'));
@@ -45,7 +49,11 @@ export function takeDamage(amount) {
     player.damageFlashTimer = 0.4;
 
     gameState.floatingTexts.push(
-        new FloatingText(player.x, player.y - 30, `-${finalDamage.toFixed(0)}`, SETTINGS.colors.textDmg)
+        new FloatingText(player.x, player.y, `-${finalDamage.toFixed(0)}`, {
+            color: SETTINGS.colors.textDmg,
+            offsetY: 30,
+            spreadX: 8
+        })
     );
 
     for (let i = 0; i < 10; i++) {

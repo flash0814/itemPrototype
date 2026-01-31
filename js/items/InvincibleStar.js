@@ -20,7 +20,12 @@ export class InvincibleStar extends ItemBase {
         player.maxInvincibleTimer = this.effectDuration;
         player.defendRatio = this.defendRatio;
         gameState.floatingTexts.push(
-            new FloatingText(player.x, player.y - 30, "INVINCIBLE!", '#ffd700')
+            new FloatingText(player.x, player.y, "INVINCIBLE!", {
+                color: '#ffd700',
+                offsetY: 30,
+                scale: 1.2,
+                fadeStyle: 'late'
+            })
         );
     }
 

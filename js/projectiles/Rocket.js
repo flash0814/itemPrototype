@@ -52,7 +52,7 @@ export class Rocket extends Projectile {
                 const dy = this.y - closestY;
 
                 if ((dx * dx + dy * dy) < (radius * radius)) {
-                    obj.takeDamage(damage);
+                    obj.takeDamage(damage, closestX, closestY);
                 }
             }
         }

@@ -80,10 +80,6 @@ export function initGame() {
             } else if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
                 fireRocket(player.x, player.y, input.mouse.x, input.mouse.y);
             }
-        } else if (e.button === 2) { // 右鍵
-            if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
-                toggleAimMode();
-            }
         } else if (e.button === 1) { // 中鍵 (拖曳/複製)
             e.preventDefault();
             handleMiddleClick(e);

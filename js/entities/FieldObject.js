@@ -44,11 +44,16 @@ export class FieldObject {
         this.y = clampedY;
     }
 
-    takeDamage(amount) {
-        const centerX = this.x + this.width / 2;
-        const centerY = this.y + this.height / 2;
+    takeDamage(amount, hitX, hitY) {
+        // 若有碰撞點則用碰撞點，否則 fallback 到中心
+        const tx = hitX ?? (this.x + this.width / 2);
+        const ty = hitY ?? (this.y + this.height / 2);
         gameState.floatingTexts.push(
-            new FloatingText(centerX, centerY - 20, `-${amount}`, '#ffaa00')
+            new FloatingText(tx, ty, `-${amount}`, {
+                color: '#ffaa00',
+                offsetY: 20,
+                spreadX: 10
+            })
         );
     }
 }
