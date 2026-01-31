@@ -40,7 +40,13 @@ export const inputs = {
     edrinkTicks: null,
     edrinkPerTick: null,
     edrinkTickRate: null,
-    edrinkWait: null
+    edrinkWait: null,
+    // MeteorStrike
+    meteorGroup: null,
+    meteorDur: null,
+    meteorAim: null,
+    meteorDmg: null,
+    meteorRad: null
 };
 
 export function initSettingsPanel() {
@@ -79,6 +85,11 @@ export function initSettingsPanel() {
     inputs.edrinkPerTick = document.getElementById('inp-edrink-pertick');
     inputs.edrinkTickRate = document.getElementById('inp-edrink-tickrate');
     inputs.edrinkWait = document.getElementById('inp-edrink-wait');
+    inputs.meteorGroup = document.getElementById('group-meteorstrike');
+    inputs.meteorDur = document.getElementById('inp-meteor-dur');
+    inputs.meteorAim = document.getElementById('inp-meteor-aim');
+    inputs.meteorDmg = document.getElementById('inp-meteor-dmg');
+    inputs.meteorRad = document.getElementById('inp-meteor-rad');
 
     // --- Player Settings ---
     inputs.playerSettingsSelect.addEventListener('change', (e) => {
@@ -112,6 +123,7 @@ export function initSettingsPanel() {
         inputs.packGroup.classList.add('hidden');
         inputs.starGroup.classList.add('hidden');
         inputs.edrinkGroup.classList.add('hidden');
+        inputs.meteorGroup.classList.add('hidden');
 
         if (e.target.value === 'HealBox') {
             inputs.healboxGroup.classList.remove('hidden');
@@ -121,6 +133,8 @@ export function initSettingsPanel() {
             inputs.starGroup.classList.remove('hidden');
         } else if (e.target.value === 'EnergyDrink') {
             inputs.edrinkGroup.classList.remove('hidden');
+        } else if (e.target.value === 'MeteorStrike') {
+            inputs.meteorGroup.classList.remove('hidden');
         }
     });
 
@@ -148,4 +162,10 @@ export function initSettingsPanel() {
     inputs.edrinkPerTick.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.perTickPlus = Number(e.target.value));
     inputs.edrinkTickRate.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.tickRate = Number(e.target.value));
     inputs.edrinkWait.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.waitToFirstTick = Number(e.target.value));
+
+    // --- MeteorStrike ---
+    inputs.meteorDur.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.duration = Number(e.target.value));
+    inputs.meteorAim.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.maxAimRadius = Number(e.target.value));
+    inputs.meteorDmg.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.damage = Number(e.target.value));
+    inputs.meteorRad.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.radius = Number(e.target.value));
 }

@@ -40,7 +40,9 @@ export const SETTINGS = {
         energyDrink: '#e8c828',
         energyDrinkGlow: 'rgba(232, 200, 40, 0.6)',
         rocket: '#ffaa00',
-        rocketExplosion: 'rgba(255, 100, 0, 0.8)'
+        rocketExplosion: 'rgba(255, 100, 0, 0.8)',
+        meteorStrike: '#cc3333',
+        meteorGlow: 'rgba(255, 100, 30, 0.6)'
     },
 
     general: {
@@ -72,6 +74,16 @@ export const SETTINGS = {
         perTickPlus: 10,
         tickRate: 0.8,
         waitToFirstTick: 0.4
+    },
+
+    itemMeteorStrike: {
+        duration: 0,
+        maxAimRadius: 1200,
+        damage: 150,
+        radius: 250,
+        meteorSpeed: 800,
+        meteorAltitude: 600,
+        meteorAngle: 45
     },
 
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },

@@ -10,6 +10,7 @@ import { HealBox } from '../items/HealBox.js';
 import { HealPack } from '../items/HealPack.js';
 import { InvincibleStar } from '../items/InvincibleStar.js';
 import { EnergyDrink } from '../items/EnergyDrink.js';
+import { MeteorStrike } from '../items/MeteorStrike.js';
 import { initSettingsPanel } from '../ui/SettingsPanel.js';
 import {
     drawGrid,
@@ -253,6 +254,8 @@ function spawnItem() {
                 newItem = new HealBox(rx, ry);
             } else if (gameState.currentItemType === 'EnergyDrink') {
                 newItem = new EnergyDrink(rx, ry);
+            } else if (gameState.currentItemType === 'MeteorStrike') {
+                newItem = new MeteorStrike(rx, ry);
             }
             if (newItem) gameState.activeItems.push(newItem);
             return;
