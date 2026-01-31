@@ -236,7 +236,8 @@ function spawnItem() {
         if (!overlap) {
             const dx = rx - player.x;
             const dy = ry - player.y;
-            if (dx * dx + dy * dy < (SETTINGS.playerSize + 15) * (SETTINGS.playerSize + 15)) {
+            const minSpawnDist = SETTINGS.playerSize + 20 + 10; // playerSize(20) + pickupRadius(20) + buffer(10) = 50
+            if (dx * dx + dy * dy < minSpawnDist * minSpawnDist) {
                 overlap = true;
             }
         }
