@@ -61,10 +61,22 @@ export function screenToWorld(screenX, screenY) {
 /**
  * 滾輪縮放
  */
+/**
+ * 滾輪縮放（修改 targetZoom，由 updateZoom lerp 追趕）
+ */
 export function applyZoom(delta) {
     const cam = gameState.camera;
     const cfg = SETTINGS.cameraConfig;
     // delta > 0 = 滾輪下 = 縮小
     const factor = 1 - Math.sign(delta) * cfg.zoomSpeed;
-    cam.zoom = Math.max(cfg.zoomMin, Math.min(cfg.zoomMax, cam.zoom * factor));
+    cam.targetZoom = Math.max(cfg.zoomMin, Math.min(cfg.zoomMax, cam.targetZoom * factor));
+}
+
+/**
+ * 每幀呼叫：zoom smooth 追趕 targetZoom
+ */
+export function updateZoom(dt) {
+    const cam = gameState.camera;
+    const lerpSpeed = 1 - Math.exp(-10 * dt);
+    cam.zoom += (cam.targetZoom - cam.zoom) * lerpSpeed;
 }

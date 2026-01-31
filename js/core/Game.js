@@ -22,7 +22,7 @@ import {
     drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
-import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom } from './Camera.js';
+import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom } from './Camera.js';
 
 let canvas, ctx, container;
 let debugInfoElement, aimStatusElement;
@@ -95,6 +95,7 @@ export function initGame() {
     gameState.world.width = wc.width;
     gameState.world.height = wc.height;
     gameState.camera.zoom = SETTINGS.cameraConfig.initialZoom;
+    gameState.camera.targetZoom = SETTINGS.cameraConfig.initialZoom;
 
     // 初始化場景物件
     for (const o of wc.obstacles) {
@@ -491,6 +492,7 @@ function update(deltaTime) {
     gameState.particles = gameState.particles.filter(p => p.life > 0);
 
     // 更新攝影機
+    updateZoom(deltaTime);
     updateCamera(player.x, player.y);
 }
 

@@ -16,7 +16,7 @@ export const gameState = {
     world: { width: 2500, height: 2500 },
 
     // 攝影機
-    camera: { x: 0, y: 0, zoom: 1.0 },
+    camera: { x: 0, y: 0, zoom: 1.0, targetZoom: 1.0 },
 
     // 遊戲物件集合
     fieldObjects: [],
