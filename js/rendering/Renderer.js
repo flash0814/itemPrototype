@@ -54,22 +54,46 @@ export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') 
     ctx.restore();
 }
 
-// 繪製網格
+// 繪製網格（只繪製可見範圍）
 export function drawGrid(ctx) {
+    const cam = gameState.camera;
+    const zoom = cam.zoom;
+    const viewW = gameState.width / zoom;
+    const viewH = gameState.height / zoom;
+    const left = cam.x - viewW / 2;
+    const top = cam.y - viewH / 2;
+    const right = cam.x + viewW / 2;
+    const bottom = cam.y + viewH / 2;
+
+    const gs = SETTINGS.gridSize;
+    const startX = Math.floor(left / gs) * gs;
+    const startY = Math.floor(top / gs) * gs;
+    const endX = Math.ceil(right / gs) * gs;
+    const endY = Math.ceil(bottom / gs) * gs;
+
     ctx.strokeStyle = SETTINGS.colors.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
 
-    for (let x = 0; x <= gameState.width; x += SETTINGS.gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, gameState.height);
+    for (let x = startX; x <= endX; x += gs) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
     }
-    for (let y = 0; y <= gameState.height; y += SETTINGS.gridSize) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(gameState.width, y);
+    for (let y = startY; y <= endY; y += gs) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
     }
 
     ctx.stroke();
+}
+
+// 繪製世界邊界
+export function drawWorldBounds(ctx) {
+    const w = gameState.world.width;
+    const h = gameState.world.height;
+    ctx.strokeStyle = '#ff3333';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(0, 0, w, h);
 }
 
 // 繪製玩家軌跡

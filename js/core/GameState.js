@@ -8,9 +8,15 @@ export const gameState = {
     currentItemType: 'HealBox',
     currentPlayerSettingType: 'PlayerStatus',
 
-    // 畫布尺寸
+    // 畫布尺寸（viewport）
     width: 0,
     height: 0,
+
+    // 世界尺寸
+    world: { width: 2500, height: 2500 },
+
+    // 攝影機
+    camera: { x: 0, y: 0, zoom: 1.0 },
 
     // 遊戲物件集合
     fieldObjects: [],
@@ -39,5 +45,5 @@ export const editorState = {
 
 export const input = {
     keys: { w: false, a: false, s: false, d: false },
-    mouse: { x: 0, y: 0, valid: false }
+    mouse: { x: 0, y: 0, screenX: 0, screenY: 0, valid: false }
 };

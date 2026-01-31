@@ -53,5 +53,20 @@ export const SETTINGS = {
     },
 
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
-    itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 }
+    itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
+
+    worldConfig: {
+        width: 2500,
+        height: 2500,
+        playerStart: { x: 300, y: 300 },
+        obstacles: [{ x: 400, y: 400, size: 200 }],
+        fireTraps: [{ x: 80, y: 80 }]
+    },
+
+    cameraConfig: {
+        initialZoom: 1.0,
+        zoomMin: 0.3,
+        zoomMax: 3.0,
+        zoomSpeed: 0.1
+    }
 };

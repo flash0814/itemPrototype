@@ -11,6 +11,7 @@ import { InvincibleStar } from '../items/InvincibleStar.js';
 import { initSettingsPanel } from '../ui/SettingsPanel.js';
 import {
     drawGrid,
+    drawWorldBounds,
     drawTrail,
     drawPlayer,
     drawPlayerHPBar,
@@ -18,6 +19,7 @@ import {
     drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
+import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom } from './Camera.js';
 
 let canvas, ctx, container;
 let debugInfoElement, aimStatusElement;
@@ -53,9 +55,20 @@ export function initGame() {
     // 滑鼠事件
     canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        input.mouse.x = e.clientX - rect.left;
-        input.mouse.y = e.clientY - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        input.mouse.screenX = (e.clientX - rect.left) * scaleX;
+        input.mouse.screenY = (e.clientY - rect.top) * scaleY;
+        const world = screenToWorld(input.mouse.screenX, input.mouse.screenY);
+        input.mouse.x = world.x;
+        input.mouse.y = world.y;
     });
+
+    // 滾輪縮放
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        applyZoom(e.deltaY);
+    }, { passive: false });
 
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -76,15 +89,23 @@ export function initGame() {
         }
     });
 
+    // 初始化世界
+    const wc = SETTINGS.worldConfig;
+    gameState.world.width = wc.width;
+    gameState.world.height = wc.height;
+    gameState.camera.zoom = SETTINGS.cameraConfig.initialZoom;
+
     // 初始化場景物件
-    const h = gameState.height || window.innerHeight;
-    const obsSize = h / 3;
-    gameState.fieldObjects.push(new Obstacle(100, 200, obsSize));
-    gameState.fieldObjects.push(new FireTrap(80, 80));
+    for (const o of wc.obstacles) {
+        gameState.fieldObjects.push(new Obstacle(o.x, o.y, o.size));
+    }
+    for (const t of wc.fireTraps) {
+        gameState.fieldObjects.push(new FireTrap(t.x, t.y));
+    }
 
     // 設定玩家初始位置
-    player.x = gameState.width * 0.4;
-    player.y = gameState.height / 2;
+    player.x = wc.playerStart.x;
+    player.y = wc.playerStart.y;
 
     // 開始遊戲迴圈
     requestAnimationFrame(gameLoop);
@@ -176,8 +197,8 @@ function spawnItem() {
     const padding = 50;
 
     for (let i = 0; i < maxAttempts; i++) {
-        const rx = padding + Math.random() * (gameState.width - padding * 2);
-        const ry = padding + Math.random() * (gameState.height - padding * 2);
+        const rx = padding + Math.random() * (gameState.world.width - padding * 2);
+        const ry = padding + Math.random() * (gameState.world.height - padding * 2);
 
         let overlap = false;
         for (let obj of gameState.fieldObjects) {
@@ -226,36 +247,13 @@ function resize() {
     container.style.width = `${gameState.width}px`;
     container.style.height = `${gameState.height}px`;
 
-    // 調整障礙物大小
-    const obs = gameState.fieldObjects.find(o => o instanceof Obstacle);
-    if (obs && !obs.isDragging) {
-        obs.width = gameState.height / 3;
-        obs.height = gameState.height / 3;
-        obs.x = (gameState.width - obs.width) / 2;
-        obs.y = (gameState.height - obs.height) / 2;
-    }
-
     updateDebugInfo();
-
-    // 檢查玩家是否卡住
-    let stuck = false;
-    for (let obj of gameState.fieldObjects) {
-        if (obj.isSolid && checkCollisionWithRect(player.x, player.y, SETTINGS.playerSize, obj)) {
-            stuck = true;
-            break;
-        }
-    }
-
-    if (stuck) {
-        player.x = gameState.width * 0.1;
-        player.y = gameState.height * 0.5;
-    }
 }
 
 function updateDebugInfo() {
     if (debugInfoElement) {
         const held = player.heldItem ? player.heldItem.constructor.name : 'None';
-        debugInfoElement.innerText = `HP: ${Math.ceil(player.currentHp)}/${player.maxHp} | Held: ${held} | Items: ${gameState.activeItems.length}`;
+        debugInfoElement.innerText = `HP: ${Math.ceil(player.currentHp)}/${player.maxHp} | Held: ${held} | Items: ${gameState.activeItems.length} | Zoom: ${gameState.camera.zoom.toFixed(1)}`;
     }
 }
 
@@ -348,7 +346,7 @@ function update(deltaTime) {
 
             // X 軸移動
             let nextX = player.x + dx * moveDist;
-            nextX = Math.max(margin, Math.min(gameState.width - margin, nextX));
+            nextX = Math.max(margin, Math.min(gameState.world.width - margin, nextX));
 
             let collideX = false;
             for (let obj of gameState.fieldObjects) {
@@ -361,7 +359,7 @@ function update(deltaTime) {
 
             // Y 軸移動
             let nextY = player.y + dy * moveDist;
-            nextY = Math.max(margin, Math.min(gameState.height - margin, nextY));
+            nextY = Math.max(margin, Math.min(gameState.world.height - margin, nextY));
 
             let collideY = false;
             for (let obj of gameState.fieldObjects) {
@@ -426,13 +424,21 @@ function update(deltaTime) {
     // 更新粒子
     gameState.particles.forEach(p => p.update(deltaTime));
     gameState.particles = gameState.particles.filter(p => p.life > 0);
+
+    // 更新攝影機
+    updateCamera(player.x, player.y);
 }
 
 function draw() {
+    // 清除整個畫布
     ctx.fillStyle = SETTINGS.colors.bg;
     ctx.fillRect(0, 0, gameState.width, gameState.height);
 
+    // === 世界空間繪製 ===
+    applyCameraTransform(ctx);
+
     drawGrid(ctx);
+    drawWorldBounds(ctx);
 
     gameState.fieldObjects.forEach(obj => obj.draw(ctx));
     gameState.activeItems.forEach(item => item.draw(ctx));
@@ -442,13 +448,17 @@ function draw() {
     drawTrail(ctx);
     drawPlayer(ctx);
     drawPlayerHPBar(ctx);
-    drawHeldItemUI(ctx);
 
     if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
         drawAimingUI(ctx, input);
     }
 
     gameState.floatingTexts.forEach(txt => txt.draw(ctx));
+
+    restoreCameraTransform(ctx);
+
+    // === 螢幕空間繪製（HUD）===
+    drawHeldItemUI(ctx);
 }
 
 function gameLoop(timestamp) {
