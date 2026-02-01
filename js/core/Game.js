@@ -1,7 +1,7 @@
 import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
-import { player, updateEnergy, consumeEnergy, restoreEnergy } from '../entities/Player.js';
+import { player, updateEnergy, consumeEnergy, restoreEnergy, onRevive } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
@@ -45,6 +45,7 @@ export function initGame() {
     // 鍵盤事件
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
+        if (player.isDead) return;
         if (key === 'f') toggleAimMode();
         if (key === 'r') spawnItem();
         if (input.keys.hasOwnProperty(key)) input.keys[key] = true;
@@ -77,6 +78,7 @@ export function initGame() {
 
     canvas.addEventListener('mousedown', (e) => {
         if (e.button === 0) { // 左鍵
+            if (player.isDead) return;
             if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
                 tryThrowItem();
             } else if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
@@ -163,6 +165,19 @@ function handleMiddleClick(e) {
             }
         }
     }
+}
+
+// 強制退出瞄準模式（死亡時呼叫）
+function exitAimMode() {
+    if (gameState.currentMode !== GAME_STATE_MODE.AIMING) return;
+    const cam = gameState.camera;
+    const az = cam.autoZoom;
+    gameState.currentMode = GAME_STATE_MODE.ROAMING;
+    aimStatusElement.style.display = 'none';
+    az.active = false;
+    az.waitTimer = 0;
+    startAutoZoom(az.prevZoom, SETTINGS.cameraConfig.autoZoomTime);
+    cam.targetZoom = az.prevZoom;
 }
 
 function toggleAimMode() {
@@ -380,6 +395,53 @@ function checkItemPickup() {
 }
 
 function update(deltaTime) {
+    // === 死亡狀態處理 ===
+    if (player.isDead) {
+        // 確保退出瞄準模式 & 清除移動輸入
+        exitAimMode();
+        input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
+
+        player.deathTimer -= deltaTime;
+
+        // 更新死亡效果
+        if (gameState.deathEffect) {
+            gameState.deathEffect.update(deltaTime);
+
+            // 死亡倒數結束 → 觸發復活動畫
+            if (player.deathTimer <= 0 && gameState.deathEffect.state === 'waiting') {
+                gameState.deathEffect.startRevive();
+            }
+
+            // 復活動畫完成 → 正式復活
+            if (gameState.deathEffect.state === 'done') {
+                onRevive();
+                gameState.deathEffect = null;
+            }
+        }
+
+        // 死亡期間仍更新世界物件、彈射物、粒子等
+        gameState.fieldObjects.forEach(obj => obj.update(deltaTime));
+        gameState.projectiles.forEach(p => p.update(deltaTime));
+        gameState.projectiles = gameState.projectiles.filter(p => !p.isDead);
+        player.trail.forEach(p => p.life -= deltaTime * 4);
+        player.trail = player.trail.filter(p => p.life > 0);
+        gameState.activeItems.forEach(item => item.update(deltaTime));
+        gameState.activeItems = gameState.activeItems.filter(item => !item.isDead);
+        gameState.floatingTexts.forEach(txt => txt.update(deltaTime));
+        gameState.floatingTexts = gameState.floatingTexts.filter(txt => txt.life > 0);
+        gameState.particles.forEach(p => p.update(deltaTime));
+        gameState.particles = gameState.particles.filter(p => p.life > 0);
+        updateZoom(deltaTime);
+        updateCamera(player.x, player.y);
+        updateDebugInfo();
+        return;
+    }
+
+    // === 正常狀態 ===
+
+    // 復活 blink 計時器
+    if (player.reviveBlinkTimer > 0) player.reviveBlinkTimer -= deltaTime;
+
     // 更新無敵計時器
     if (player.invincibleTimer > 0) {
         player.invincibleTimer -= deltaTime;
@@ -553,10 +615,15 @@ function draw() {
     gameState.particles.forEach(p => p.draw(ctx));
 
     drawTrail(ctx);
-    drawPlayer(ctx);
-    drawPlayerHPBar(ctx);
 
-    if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
+    if (player.isDead) {
+        if (gameState.deathEffect) gameState.deathEffect.draw(ctx);
+    } else {
+        drawPlayer(ctx);
+        drawPlayerHPBar(ctx);
+    }
+
+    if (!player.isDead && gameState.currentMode === GAME_STATE_MODE.AIMING) {
         drawAimingUI(ctx, input);
     }
 
@@ -565,7 +632,9 @@ function draw() {
     restoreCameraTransform(ctx);
 
     // === 螢幕空間繪製（HUD）===
-    drawHeldItemUI(ctx);
+    if (!player.isDead) {
+        drawHeldItemUI(ctx);
+    }
 }
 
 function gameLoop(timestamp) {

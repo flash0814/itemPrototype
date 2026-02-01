@@ -28,6 +28,12 @@ export class Particle {
             this.vy = -30 - Math.random() * 50;
             this.size = 4 + Math.random() * 4;
             this.color = '#ff4400';
+        } else if (type === 'revive') {
+            this.vx = (Math.random() - 0.5) * 30;
+            this.vy = (Math.random() - 0.5) * 30;
+            this.size = 2 + Math.random() * 3;
+            this.color = '#00f3ff';
+            this.life = 0.4 + Math.random() * 0.3;
         } else {
             // heal
             this.vx = (Math.random() - 0.5) * 20;
@@ -62,6 +68,16 @@ export class Particle {
             ctx.translate(this.x, this.y);
             ctx.fillRect(-s, -thick / 2, s * 2, thick);
             ctx.fillRect(-thick / 2, -s, thick, s * 2);
+        } else if (this.type === 'revive') {
+            const s = this.size;
+            ctx.translate(this.x, this.y);
+            ctx.beginPath();
+            ctx.moveTo(0, -s);
+            ctx.lineTo(s * 0.6, 0);
+            ctx.lineTo(0, s);
+            ctx.lineTo(-s * 0.6, 0);
+            ctx.closePath();
+            ctx.fill();
         } else if (this.type === 'energy') {
             const s = this.size;
             ctx.translate(this.x, this.y);

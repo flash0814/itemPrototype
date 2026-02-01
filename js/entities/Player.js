@@ -2,6 +2,7 @@ import { SETTINGS } from '../core/Settings.js';
 import { gameState } from '../core/GameState.js';
 import { FloatingText } from '../effects/FloatingText.js';
 import { Particle } from '../effects/Particle.js';
+import { DeathEffect } from '../effects/DeathEffect.js';
 
 // 玩家物件
 export const player = {
@@ -26,7 +27,12 @@ export const player = {
     displayEnergy: SETTINGS.general.defEnergy,
     energyRecoverRate: SETTINGS.general.energyRecoverRate,
     energyRecoverCD: 0,
-    energyRecoverBlocked: false
+    energyRecoverBlocked: false,
+
+    // Death/Revive
+    isDead: false,
+    deathTimer: 0,
+    reviveBlinkTimer: 0
 };
 
 // 更新 energy（每幀呼叫）
@@ -87,6 +93,8 @@ export function healPlayer(amount) {
 
 // 玩家受傷
 export function takeDamage(amount) {
+    if (player.isDead) return;
+
     const isInvincible = player.invincibleTimer > 0;
     const finalDamage = isInvincible ? amount * player.defendRatio : amount;
 
@@ -108,4 +116,46 @@ export function takeDamage(amount) {
     for (let i = 0; i < 10; i++) {
         gameState.particles.push(new Particle(player.x, player.y, 'damage'));
     }
+
+    if (player.currentHp <= 0) {
+        onDeath();
+    }
+}
+
+// 玩家死亡
+export function onDeath() {
+    player.isDead = true;
+    player.deathTimer = SETTINGS.deathRevive.autoReviveTime;
+
+    // 清除 buffs
+    player.invincibleTimer = 0;
+    player.maxInvincibleTimer = 0;
+
+    // 清除 energy drink buffs
+    if (gameState.energyDrinkBuffs) {
+        gameState.energyDrinkBuffs.length = 0;
+    }
+
+    // 清除 held item
+    if (player.heldItem) {
+        player.heldItem.isDead = true;
+        player.heldItem = null;
+    }
+
+    // 生成死亡效果
+    gameState.deathEffect = new DeathEffect(player.x, player.y);
+}
+
+// 玩家復活
+export function onRevive() {
+    player.isDead = false;
+    player.currentHp = player.maxHp;
+    player.currentEnergy = player.maxEnergy;
+    player.displayEnergy = player.maxEnergy;
+    player.invincibleTimer = SETTINGS.deathRevive.reviveInvincibleTime;
+    player.maxInvincibleTimer = SETTINGS.deathRevive.reviveInvincibleTime;
+    player.reviveBlinkTimer = SETTINGS.deathRevive.reviveInvincibleTime;
+    player.defendRatio = 0;
+    player.damageShakeTimer = 0;
+    player.damageFlashTimer = 0;
 }

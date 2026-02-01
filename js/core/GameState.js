@@ -35,6 +35,7 @@ export const gameState = {
     projectiles: [],
     floatingTexts: [],
     particles: [],
+    deathEffect: null,
 
     // Inventory UI 動畫狀態
     inventoryAnim: {

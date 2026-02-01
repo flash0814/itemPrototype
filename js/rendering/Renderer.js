@@ -164,6 +164,11 @@ export function drawTrail(ctx) {
 export function drawPlayer(ctx) {
     ctx.save();
 
+    // 復活 blink 閃爍
+    if (player.reviveBlinkTimer > 0) {
+        ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() / 1000 * 12));
+    }
+
     let shakeX = 0, shakeY = 0;
     if (player.damageShakeTimer > 0) {
         const shakeIntensity = 3;

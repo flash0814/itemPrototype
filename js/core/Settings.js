@@ -54,6 +54,13 @@ export const SETTINGS = {
         energyRecoverRate: 20
     },
 
+    deathRevive: {
+        autoReviveTime: 3,
+        reviveInvincibleTime: 10,
+        deathAnimTime: 0.8,
+        reviveAnimTime: 1.0
+    },
+
     itemDropRange: 300,
 
     attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4, energyCost: 10 },
@@ -79,7 +86,7 @@ export const SETTINGS = {
 
     itemMeteorStrike: {
         duration: 0,
-        maxAimRadius: 1200,
+        maxAimRadius: 500,
         damage: 150,
         radius: 250,
         meteorSpeed: 800,
