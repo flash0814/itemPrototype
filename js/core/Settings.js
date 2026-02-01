@@ -56,7 +56,7 @@ export const SETTINGS = {
 
     deathRevive: {
         autoReviveTime: 3,
-        reviveInvincibleTime: 10,
+        reviveInvincibleTime: 3,
         deathAnimTime: 0.8,
         reviveAnimTime: 1.0
     },

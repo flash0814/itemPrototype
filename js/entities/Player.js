@@ -3,6 +3,7 @@ import { gameState } from '../core/GameState.js';
 import { FloatingText } from '../effects/FloatingText.js';
 import { Particle } from '../effects/Particle.js';
 import { DeathEffect } from '../effects/DeathEffect.js';
+import { buffManager, BUFF_TYPE, BUFF_ICON } from '../core/BuffManager.js';
 
 // 玩家物件
 export const player = {
@@ -127,14 +128,11 @@ export function onDeath() {
     player.isDead = true;
     player.deathTimer = SETTINGS.deathRevive.autoReviveTime;
 
-    // 清除 buffs
+    // 清除所有 buffs（透過 BuffManager）
+    buffManager.clearAll();
     player.invincibleTimer = 0;
     player.maxInvincibleTimer = 0;
-
-    // 清除 energy drink buffs
-    if (gameState.energyDrinkBuffs) {
-        gameState.energyDrinkBuffs.length = 0;
-    }
+    player.defendRatio = 1;
 
     // 清除 held item
     if (player.heldItem) {
@@ -152,10 +150,17 @@ export function onRevive() {
     player.currentHp = player.maxHp;
     player.currentEnergy = player.maxEnergy;
     player.displayEnergy = player.maxEnergy;
-    player.invincibleTimer = SETTINGS.deathRevive.reviveInvincibleTime;
-    player.maxInvincibleTimer = SETTINGS.deathRevive.reviveInvincibleTime;
-    player.reviveBlinkTimer = SETTINGS.deathRevive.reviveInvincibleTime;
-    player.defendRatio = 0;
     player.damageShakeTimer = 0;
     player.damageFlashTimer = 0;
+
+    // 復活無敵 buff（顯示 REVIVE icon）
+    buffManager.addBuff({
+        id: 'reviveBlink',
+        type: BUFF_TYPE.INVINCIBLE,
+        duration: SETTINGS.deathRevive.reviveInvincibleTime,
+        showIcon: true,
+        iconType: BUFF_ICON.REVIVE,
+        iconColor: '#00f3ff',
+        defendRatio: 0
+    });
 }

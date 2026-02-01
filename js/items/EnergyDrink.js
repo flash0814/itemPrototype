@@ -1,8 +1,7 @@
 import { SETTINGS } from '../core/Settings.js';
-import { gameState } from '../core/GameState.js';
 import { ItemBase } from './ItemBase.js';
-import { player, restoreEnergy } from '../entities/Player.js';
-import { Particle } from '../effects/Particle.js';
+import { restoreEnergy } from '../entities/Player.js';
+import { buffManager, BUFF_TYPE, BUFF_ICON } from '../core/BuffManager.js';
 
 export class EnergyDrink extends ItemBase {
     constructor(x, y) {
@@ -20,14 +19,18 @@ export class EnergyDrink extends ItemBase {
             restoreEnergy(cfg.instantPlus);
         }
 
-        // 徐徐增加（HoT 效果）— 存在 player 身上作為 buff
+        // 徐徐增加（HoT 效果）
         if (cfg.totalTicks > 0 && cfg.perTickPlus > 0) {
-            gameState.energyDrinkBuffs = gameState.energyDrinkBuffs || [];
-            gameState.energyDrinkBuffs.push({
-                ticksRemaining: cfg.totalTicks,
-                perTickPlus: cfg.perTickPlus,
+            buffManager.addHoTBuff({
+                type: BUFF_TYPE.ENERGY_HOT,
+                totalTicks: cfg.totalTicks,
+                perTickValue: cfg.perTickPlus,
                 tickRate: cfg.tickRate,
-                timer: cfg.waitToFirstTick
+                initialDelay: cfg.waitToFirstTick,
+                showIcon: true,
+                iconType: BUFF_ICON.ENERGY,
+                iconColor: SETTINGS.colors.energyDrink,
+                onTick: (value) => restoreEnergy(value)
             });
         }
     }

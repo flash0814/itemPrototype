@@ -26,6 +26,7 @@ js/
     Camera.js            — 攝影機系統（跟隨、夾邊、縮放、座標轉換）
     Settings.js          — 所有常量與預設值（SETTINGS 物件）
     Utils.js             — 工具函式（lerpAngle, checkCollisionWithRect）
+    BuffManager.js       — Buff 管理系統（統一管理所有 buff 狀態與 icon）
   entities/
     Player.js            — 玩家狀態（hp, trail, heldItem, invincible 等）
     FieldObject.js       — 場景物件基類
@@ -169,6 +170,86 @@ resize 只改變畫布像素尺寸（viewport），不影響世界物件的位�
 - Energy gauge 在 HP bar 正下方（世界空間，跟隨玩家）
 - 顏色：`SETTINGS.colors.energy`（金黃色）
 - smooth 機制：`displayEnergy` 用 `lerp(display, current, 1 - e^(-10*dt))` 追趕
+
+## Buff 系統
+
+統一管理所有 buff 狀態（無敵、HoT、復活保護等），支援多 buff icon 顯示。
+
+### 架構
+
+- **BuffManager.js** — 中央 buff 容器與 API
+- **buffManager.buffs[]** — 所有活躍 buff 陣列
+- 每幀由 `Game.js` 呼叫 `buffManager.update(dt)` 更新
+
+### Buff 類型
+
+```js
+BUFF_TYPE = {
+    INVINCIBLE: 'INVINCIBLE',    // 無敵（InvincibleStar, AutoRevive）
+    ENERGY_HOT: 'ENERGY_HOT',    // Energy HoT（EnergyDrink）
+    REVIVE_BLINK: 'REVIVE_BLINK' // 復活保護（未來用）
+}
+
+BUFF_ICON = {
+    SHIELD: 'SHIELD',  // 盾牌（無敵星）
+    ENERGY: 'ENERGY',  // 閃電（能量飲料）
+    REVIVE: 'REVIVE'   // 菱形（復活保護）
+}
+```
+
+### Buff 物件結構
+
+```js
+{
+    id: string,           // 唯一識別碼
+    type: BUFF_TYPE,
+    duration: number,     // 總時間（秒）
+    elapsed: number,      // 已過時間
+    showIcon: boolean,    // 是否顯示 icon
+    iconType: BUFF_ICON,
+    iconColor: string,
+    defendRatio?: number, // 無敵用：受傷倍率
+    // HoT 專用
+    ticksRemaining?: number,
+    perTickValue?: number,
+    tickRate?: number,
+    tickTimer?: number,
+    onTick?: Function,
+    onExpire?: Function
+}
+```
+
+### API（BuffManager.js）
+
+| 函式 | 用途 |
+|------|------|
+| `addBuff(config)` | 新增一般 buff，回傳 buff 物件 |
+| `addHoTBuff(config)` | 新增 HoT buff（自動計算 duration） |
+| `removeBuff(id)` | 移除指定 id 的 buff |
+| `hasBuff(type)` | 檢查是否有指定類型的 buff |
+| `getBuff(type)` | 取得第一個符合類型的 buff |
+| `getVisibleBuffs()` | 取得所有需顯示 icon 的 buff |
+| `update(dt)` | 每幀更新：elapsed 累加、HoT tick、到期移除 |
+| `clearAll()` | 清除所有 buff（死亡時呼叫） |
+
+### Icon 顯示
+
+- 位置：HP bar 正上方，多 buff 左至右排列，整體置中
+- 邊框倒數：順時針減少，`progress = 1 - elapsed / duration`
+- 閃爍：`progress <= 0.4` 時以 12.56 rad/s 閃爍
+- 繪製：`Renderer.js` 的 `drawBuffIcons()` 函式
+
+### 向後相容
+
+BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等變數，確保 `drawPlayer()` 中的護盾視覺效果正常運作。
+
+### 來源整合
+
+| 來源 | 觸發 | Buff 類型 | Icon |
+|------|------|-----------|------|
+| InvincibleStar | `onPassiveEffect()` | INVINCIBLE | SHIELD |
+| EnergyDrink | `onPassiveEffect()` | ENERGY_HOT | ENERGY |
+| AutoRevive | `onRevive()` | INVINCIBLE | REVIVE |
 
 ## 道具系統
 

@@ -2,6 +2,7 @@ import { SETTINGS } from '../core/Settings.js';
 import { gameState, GAME_STATE_MODE } from '../core/GameState.js';
 import { player } from '../entities/Player.js';
 import { checkCollisionWithRect } from '../core/Utils.js';
+import { buffManager } from '../core/BuffManager.js';
 
 // 繪製 Buff 圖標
 export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') {
@@ -22,6 +23,28 @@ export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') 
         ctx.lineTo(0, -s / 2);
         ctx.lineTo(-s / 2, -s / 4);
         ctx.lineTo(-s / 2, 0);
+        ctx.closePath();
+        ctx.fill();
+    } else if (type === 'ENERGY') {
+        ctx.fillStyle = color;
+        const s = size * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.3, -s);
+        ctx.lineTo(s * 0.2, -s * 0.1);
+        ctx.lineTo(-s * 0.1, -s * 0.1);
+        ctx.lineTo(s * 0.3, s);
+        ctx.lineTo(-s * 0.2, s * 0.1);
+        ctx.lineTo(s * 0.1, s * 0.1);
+        ctx.closePath();
+        ctx.fill();
+    } else if (type === 'REVIVE') {
+        ctx.fillStyle = color;
+        const s = size * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.lineTo(s * 0.7, 0);
+        ctx.lineTo(0, s);
+        ctx.lineTo(-s * 0.7, 0);
         ctx.closePath();
         ctx.fill();
     }
@@ -52,6 +75,31 @@ export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') 
 
     ctx.stroke();
     ctx.restore();
+}
+
+// 繪製多 buff icons（左至右排列，整體置中）
+export function drawBuffIcons(ctx, centerX, baseY) {
+    const visibleBuffs = buffManager.getVisibleBuffs();
+    if (visibleBuffs.length === 0) return;
+
+    const iconSize = 22;
+    const gap = 4;
+    const spacing = iconSize + gap;
+    const totalWidth = visibleBuffs.length * iconSize + (visibleBuffs.length - 1) * gap;
+    const startX = centerX - totalWidth / 2 + iconSize / 2;
+
+    visibleBuffs.forEach((buff, i) => {
+        const x = startX + i * spacing;
+        const progress = 1 - (buff.elapsed / buff.duration);
+
+        ctx.save();
+        if (progress <= 0.4) {
+            const blink = Math.sin(Date.now() / 1000 * 12.56);
+            ctx.globalAlpha = 0.3 + 0.7 * ((blink + 1) / 2);
+        }
+        drawBuffIcon(ctx, x, baseY, iconSize, progress, buff.iconColor, buff.iconType);
+        ctx.restore();
+    });
 }
 
 // 繪製網格（只繪製可見範圍）
@@ -265,20 +313,8 @@ export function drawPlayerHPBar(ctx) {
     const barH = 5;
     const yOffset = -SETTINGS.playerSize - 15;
 
-    // Buff 圖標
-    if (player.invincibleTimer > 0 && player.maxInvincibleTimer > 0) {
-        const progress = player.invincibleTimer / player.maxInvincibleTimer;
-        const iconSize = 22;
-
-        ctx.save();
-        if (progress <= 0.4) {
-            const speed = 12.56;
-            const blink = Math.sin(Date.now() / 1000 * speed);
-            ctx.globalAlpha = 0.3 + 0.7 * ((blink + 1) / 2);
-        }
-        drawBuffIcon(ctx, 0, yOffset - 17, iconSize, progress, SETTINGS.colors.buffBorder, 'SHIELD');
-        ctx.restore();
-    }
+    // Buff icons（多 buff 左至右排列，整體置中）
+    drawBuffIcons(ctx, 0, yOffset - 17);
 
     // 血條背景
     ctx.fillStyle = '#111';

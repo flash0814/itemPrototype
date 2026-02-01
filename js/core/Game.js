@@ -1,6 +1,7 @@
 import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
+import { buffManager, BUFF_TYPE } from './BuffManager.js';
 import { player, updateEnergy, consumeEnergy, restoreEnergy, onRevive } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
@@ -439,15 +440,21 @@ function update(deltaTime) {
 
     // === 正常狀態 ===
 
-    // 復活 blink 計時器
-    if (player.reviveBlinkTimer > 0) player.reviveBlinkTimer -= deltaTime;
+    // 更新 buff 系統
+    buffManager.update(deltaTime);
 
-    // 更新無敵計時器
-    if (player.invincibleTimer > 0) {
-        player.invincibleTimer -= deltaTime;
+    // 同步 player timers（向後相容 drawPlayer 中的 shield visual）
+    const invBuff = buffManager.getBuff(BUFF_TYPE.INVINCIBLE);
+    if (invBuff) {
+        player.invincibleTimer = invBuff.duration - invBuff.elapsed;
+        player.maxInvincibleTimer = invBuff.duration;
+        player.defendRatio = invBuff.defendRatio ?? 0;
+        player.reviveBlinkTimer = (invBuff.iconType === 'REVIVE') ? player.invincibleTimer : 0;
     } else {
         player.invincibleTimer = 0;
+        player.maxInvincibleTimer = 0;
         player.defendRatio = 1;
+        player.reviveBlinkTimer = 0;
     }
 
     if (player.damageShakeTimer > 0) player.damageShakeTimer -= deltaTime;
@@ -455,22 +462,6 @@ function update(deltaTime) {
 
     // 更新 energy
     updateEnergy(deltaTime);
-
-    // 更新 EnergyDrink buff ticks
-    if (gameState.energyDrinkBuffs) {
-        for (let i = gameState.energyDrinkBuffs.length - 1; i >= 0; i--) {
-            const buff = gameState.energyDrinkBuffs[i];
-            buff.timer -= deltaTime;
-            if (buff.timer <= 0 && buff.ticksRemaining > 0) {
-                restoreEnergy(buff.perTickPlus);
-                buff.ticksRemaining--;
-                buff.timer = buff.tickRate;
-            }
-            if (buff.ticksRemaining <= 0) {
-                gameState.energyDrinkBuffs.splice(i, 1);
-            }
-        }
-    }
 
     // 編輯器拖曳
     if (editorState.draggingObj) {

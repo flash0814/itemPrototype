@@ -3,6 +3,7 @@ import { gameState } from '../core/GameState.js';
 import { ItemBase } from './ItemBase.js';
 import { player } from '../entities/Player.js';
 import { FloatingText } from '../effects/FloatingText.js';
+import { buffManager, BUFF_TYPE, BUFF_ICON } from '../core/BuffManager.js';
 
 export class InvincibleStar extends ItemBase {
     constructor(x, y) {
@@ -16,9 +17,16 @@ export class InvincibleStar extends ItemBase {
     }
 
     onPassiveEffect() {
-        player.invincibleTimer = this.effectDuration;
-        player.maxInvincibleTimer = this.effectDuration;
-        player.defendRatio = this.defendRatio;
+        buffManager.addBuff({
+            id: 'invincible',
+            type: BUFF_TYPE.INVINCIBLE,
+            duration: this.effectDuration,
+            showIcon: true,
+            iconType: BUFF_ICON.SHIELD,
+            iconColor: SETTINGS.colors.buffBorder,
+            defendRatio: this.defendRatio
+        });
+
         gameState.floatingTexts.push(
             new FloatingText(player.x, player.y, "INVINCIBLE!", {
                 color: '#ffd700',
