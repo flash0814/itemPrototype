@@ -37,6 +37,9 @@ js/
     HealBox.js           — 主動道具：治療區域（ACTIVE, 需瞄準丟出）
     HealPack.js          — 被動道具：即時補血（PASSIVE）
     InvincibleStar.js    — 被動道具：無敵星（PASSIVE）
+    EnergyDrink.js       — 被動道具：能量飲料 HoT（PASSIVE）
+    MeteorStrike.js      — 主動道具：隕石打擊（ACTIVE, 需瞄準丟出）
+    ReviveFeather.js     — 被動道具：復活羽毛（PASSIVE, 死亡時消耗快速復活）
   projectiles/
     Projectile.js        — 彈射物基類
     Rocket.js            — 火箭（含爆炸波）
@@ -250,6 +253,12 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 | InvincibleStar | `onPassiveEffect()` | INVINCIBLE | SHIELD |
 | EnergyDrink | `onPassiveEffect()` | ENERGY_HOT | ENERGY |
 | AutoRevive | `onRevive()` | INVINCIBLE | REVIVE |
+| ReviveFeather | `onPassiveEffect()` | REVIVE_FEATHER | FEATHER |
+
+**ReviveFeather 特殊邏輯：**
+- Buff 永久存在直到死亡時消耗（duration=999999）
+- 一次只能持有 1 個羽毛 buff，重複撿取不疊加
+- 死亡時若有羽毛 buff → 使用 `reviveItemTime`（def 0）快速復活
 
 ## 道具系統
 

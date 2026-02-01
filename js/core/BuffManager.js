@@ -5,14 +5,16 @@
 export const BUFF_TYPE = {
     INVINCIBLE: 'INVINCIBLE',
     ENERGY_HOT: 'ENERGY_HOT',
-    REVIVE_BLINK: 'REVIVE_BLINK'
+    REVIVE_BLINK: 'REVIVE_BLINK',
+    REVIVE_FEATHER: 'REVIVE_FEATHER'
 };
 
 // Icon 類型
 export const BUFF_ICON = {
     SHIELD: 'SHIELD',
     ENERGY: 'ENERGY',
-    REVIVE: 'REVIVE'
+    REVIVE: 'REVIVE',
+    FEATHER: 'FEATHER'
 };
 
 export const buffManager = {

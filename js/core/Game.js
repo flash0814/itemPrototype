@@ -12,6 +12,7 @@ import { HealPack } from '../items/HealPack.js';
 import { InvincibleStar } from '../items/InvincibleStar.js';
 import { EnergyDrink } from '../items/EnergyDrink.js';
 import { MeteorStrike } from '../items/MeteorStrike.js';
+import { ReviveFeather } from '../items/ReviveFeather.js';
 import { initSettingsPanel } from '../ui/SettingsPanel.js';
 import {
     drawGrid,
@@ -313,6 +314,8 @@ function spawnItem() {
                 newItem = new EnergyDrink(rx, ry);
             } else if (gameState.currentItemType === 'MeteorStrike') {
                 newItem = new MeteorStrike(rx, ry);
+            } else if (gameState.currentItemType === 'ReviveFeather') {
+                newItem = new ReviveFeather(rx, ry);
             }
             if (newItem) gameState.activeItems.push(newItem);
             return;

@@ -46,7 +46,11 @@ export const inputs = {
     meteorDur: null,
     meteorAim: null,
     meteorDmg: null,
-    meteorRad: null
+    meteorRad: null,
+    // ReviveFeather
+    featherGroup: null,
+    featherDur: null,
+    featherRevive: null
 };
 
 export function initSettingsPanel() {
@@ -90,6 +94,9 @@ export function initSettingsPanel() {
     inputs.meteorAim = document.getElementById('inp-meteor-aim');
     inputs.meteorDmg = document.getElementById('inp-meteor-dmg');
     inputs.meteorRad = document.getElementById('inp-meteor-rad');
+    inputs.featherGroup = document.getElementById('group-revivefeather');
+    inputs.featherDur = document.getElementById('inp-feather-dur');
+    inputs.featherRevive = document.getElementById('inp-feather-revive');
 
     // --- Player Settings ---
     inputs.playerSettingsSelect.addEventListener('change', (e) => {
@@ -124,6 +131,7 @@ export function initSettingsPanel() {
         inputs.starGroup.classList.add('hidden');
         inputs.edrinkGroup.classList.add('hidden');
         inputs.meteorGroup.classList.add('hidden');
+        inputs.featherGroup.classList.add('hidden');
 
         if (e.target.value === 'HealBox') {
             inputs.healboxGroup.classList.remove('hidden');
@@ -135,6 +143,8 @@ export function initSettingsPanel() {
             inputs.edrinkGroup.classList.remove('hidden');
         } else if (e.target.value === 'MeteorStrike') {
             inputs.meteorGroup.classList.remove('hidden');
+        } else if (e.target.value === 'ReviveFeather') {
+            inputs.featherGroup.classList.remove('hidden');
         }
     });
 
@@ -168,6 +178,10 @@ export function initSettingsPanel() {
     inputs.meteorAim.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.maxAimRadius = Number(e.target.value));
     inputs.meteorDmg.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.damage = Number(e.target.value));
     inputs.meteorRad.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.radius = Number(e.target.value));
+
+    // --- ReviveFeather ---
+    inputs.featherDur.addEventListener('change', (e) => SETTINGS.itemReviveFeather.duration = Number(e.target.value));
+    inputs.featherRevive.addEventListener('change', (e) => SETTINGS.deathRevive.reviveItemTime = Number(e.target.value));
 
     // --- Sync DOM inputs from SETTINGS ---
     syncInputsFromSettings();
@@ -211,4 +225,7 @@ export function syncInputsFromSettings() {
     inputs.meteorAim.value = SETTINGS.itemMeteorStrike.maxAimRadius;
     inputs.meteorDmg.value = SETTINGS.itemMeteorStrike.damage;
     inputs.meteorRad.value = SETTINGS.itemMeteorStrike.radius;
+    // ReviveFeather
+    inputs.featherDur.value = SETTINGS.itemReviveFeather.duration;
+    inputs.featherRevive.value = SETTINGS.deathRevive.reviveItemTime;
 }

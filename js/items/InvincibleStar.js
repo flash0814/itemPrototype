@@ -78,7 +78,7 @@ export class InvincibleStar extends ItemBase {
 
         ctx.save();
         ctx.translate(this.x, drawY);
-        ctx.scale(perspectiveScale, perspectiveScale);
+        ctx.scale(perspectiveScale * 1.5, perspectiveScale * 1.5);
 
         ctx.save();
         ctx.rotate(this.rot);

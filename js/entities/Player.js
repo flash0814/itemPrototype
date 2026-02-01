@@ -126,9 +126,18 @@ export function takeDamage(amount) {
 // 玩家死亡
 export function onDeath() {
     player.isDead = true;
-    player.deathTimer = SETTINGS.deathRevive.autoReviveTime;
 
-    // 清除所有 buffs（透過 BuffManager）
+    // 檢查是否有復活羽毛 buff（在清除前檢查）
+    const hasFeather = buffManager.hasBuff(BUFF_TYPE.REVIVE_FEATHER);
+    if (hasFeather) {
+        // 有羽毛：使用快速復活時間
+        player.deathTimer = SETTINGS.deathRevive.reviveItemTime;
+    } else {
+        // 無羽毛：使用正常復活時間
+        player.deathTimer = SETTINGS.deathRevive.autoReviveTime;
+    }
+
+    // 清除所有 buffs（透過 BuffManager）— 包括羽毛
     buffManager.clearAll();
     player.invincibleTimer = 0;
     player.maxInvincibleTimer = 0;

@@ -65,7 +65,7 @@ export class EnergyDrink extends ItemBase {
 
         ctx.save();
         ctx.translate(this.x, drawY);
-        ctx.scale(perspectiveScale, perspectiveScale);
+        ctx.scale(perspectiveScale * 1.5, perspectiveScale * 1.5);
 
         this.drawIcon(ctx);
         this.drawDurationBar(ctx, -16);

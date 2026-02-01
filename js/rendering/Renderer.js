@@ -49,6 +49,26 @@ export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') 
         ctx.lineTo(-s * 0.7, 0);
         ctx.closePath();
         ctx.fill();
+    } else if (type === 'FEATHER') {
+        // 羽毛 icon
+        ctx.fillStyle = color;
+        const s = size * 0.4;
+        ctx.beginPath();
+        // 羽毛主軸
+        ctx.moveTo(0, -s);
+        ctx.quadraticCurveTo(s * 0.6, -s * 0.3, s * 0.3, s * 0.8);
+        ctx.lineTo(0, s);
+        ctx.lineTo(-s * 0.1, s * 0.6);
+        ctx.quadraticCurveTo(-s * 0.3, 0, 0, -s);
+        ctx.closePath();
+        ctx.fill();
+        // 羽毛中軸線
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 0.8);
+        ctx.quadraticCurveTo(s * 0.2, 0, 0, s * 0.8);
+        ctx.stroke();
     }
 
     ctx.strokeStyle = color;

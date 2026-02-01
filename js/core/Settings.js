@@ -56,6 +56,7 @@ export const SETTINGS = {
 
     deathRevive: {
         autoReviveTime: 3,
+        reviveItemTime: 0,        // 有復活羽毛時的復活等待時間
         reviveInvincibleTime: 3,
         deathAnimTime: 0.8,
         reviveAnimTime: 1.0
@@ -97,6 +98,7 @@ export const SETTINGS = {
 
     itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
     itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
+    itemReviveFeather: { duration: 10 },
 
     // 跳字全域預設值
     floatingText: {

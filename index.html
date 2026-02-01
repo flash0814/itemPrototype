@@ -86,6 +86,7 @@
                     <option value="InvincibleStar">InvincibleStar (無敵星)</option>
                     <option value="EnergyDrink">EnergyDrink (能量飲料)</option>
                     <option value="MeteorStrike">MeteorStrike (隕石)</option>
+                    <option value="ReviveFeather">ReviveFeather (復活羽毛)</option>
                 </select>
 
                 <!-- HealBox Settings -->
@@ -189,6 +190,18 @@
                     <div class="input-row">
                         <label>Wait 1st Tick (s)</label>
                         <input type="number" id="inp-edrink-wait" value="0.4" step="0.1">
+                    </div>
+                </div>
+
+                <!-- ReviveFeather Settings -->
+                <div id="group-revivefeather" class="hidden">
+                    <div class="input-row">
+                        <label>Duration (s)</label>
+                        <input type="number" id="inp-feather-dur" value="10" step="1" title="0 = permanent">
+                    </div>
+                    <div class="input-row">
+                        <label>Revive Time (s)</label>
+                        <input type="number" id="inp-feather-revive" value="0" step="0.1" title="Death wait time with feather">
                     </div>
                 </div>
             </div>

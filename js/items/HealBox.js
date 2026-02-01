@@ -139,7 +139,7 @@ export class HealBox extends ItemBase {
 
         ctx.save();
         ctx.translate(this.x, drawY);
-        ctx.scale(perspectiveScale, perspectiveScale);
+        ctx.scale(perspectiveScale * 1.5, perspectiveScale * 1.5);
 
         // 啟動狀態加入 glow 特效
         if (this.isActivated) {
