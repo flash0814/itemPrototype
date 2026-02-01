@@ -86,7 +86,7 @@ export const SETTINGS = {
 
     itemMeteorStrike: {
         duration: 0,
-        maxAimRadius: 500,
+        maxAimRadius: 650,
         damage: 150,
         radius: 250,
         meteorSpeed: 800,

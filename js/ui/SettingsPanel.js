@@ -168,4 +168,47 @@ export function initSettingsPanel() {
     inputs.meteorAim.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.maxAimRadius = Number(e.target.value));
     inputs.meteorDmg.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.damage = Number(e.target.value));
     inputs.meteorRad.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.radius = Number(e.target.value));
+
+    // --- Sync DOM inputs from SETTINGS ---
+    syncInputsFromSettings();
+}
+
+/** 將 SETTINGS 的值寫入所有 DOM input，確保面板顯示與程式碼一致 */
+export function syncInputsFromSettings() {
+    // Player
+    inputs.maxHP.value = SETTINGS.general.maxPlayerHP;
+    // Rocket
+    inputs.rocketSpeed.value = SETTINGS.attackRocket.speed;
+    inputs.rocketDmg.value = SETTINGS.attackRocket.damage;
+    inputs.rocketRad.value = SETTINGS.attackRocket.radius;
+    inputs.rocketLife.value = SETTINGS.attackRocket.lifetime;
+    // FireTrap
+    inputs.fireDmg.value = SETTINGS.general.fireTrapDmg;
+    inputs.fireRate.value = SETTINGS.general.fireTrapTick;
+    // HealBox
+    inputs.aimRadius.value = SETTINGS.itemHealBox.maxAimRadius;
+    inputs.healCounts.value = SETTINGS.itemHealBox.counts;
+    inputs.healRad.value = SETTINGS.itemHealBox.radius;
+    inputs.healVal.value = SETTINGS.itemHealBox.value;
+    inputs.healTick.value = SETTINGS.itemHealBox.tick;
+    inputs.healboxDur.value = SETTINGS.itemHealBox.duration;
+    // HealPack
+    inputs.packDur.value = SETTINGS.itemHealPack.duration;
+    inputs.packVal.value = SETTINGS.itemHealPack.value;
+    // InvincibleStar
+    inputs.starDur.value = SETTINGS.itemInvincibleStar.duration;
+    inputs.starEffect.value = SETTINGS.itemInvincibleStar.effectDuration;
+    inputs.starDef.value = SETTINGS.itemInvincibleStar.defendRatio;
+    // EnergyDrink
+    inputs.edrinkDur.value = SETTINGS.itemEnergyDrink.duration;
+    inputs.edrinkInstant.value = SETTINGS.itemEnergyDrink.instantPlus;
+    inputs.edrinkTicks.value = SETTINGS.itemEnergyDrink.totalTicks;
+    inputs.edrinkPerTick.value = SETTINGS.itemEnergyDrink.perTickPlus;
+    inputs.edrinkTickRate.value = SETTINGS.itemEnergyDrink.tickRate;
+    inputs.edrinkWait.value = SETTINGS.itemEnergyDrink.waitToFirstTick;
+    // MeteorStrike
+    inputs.meteorDur.value = SETTINGS.itemMeteorStrike.duration;
+    inputs.meteorAim.value = SETTINGS.itemMeteorStrike.maxAimRadius;
+    inputs.meteorDmg.value = SETTINGS.itemMeteorStrike.damage;
+    inputs.meteorRad.value = SETTINGS.itemMeteorStrike.radius;
 }
