@@ -46,7 +46,7 @@ export const SETTINGS = {
     },
 
     general: {
-        maxPlayerHP: 250,
+        maxPlayerHP: 200,
         fireTrapDmg: 50,
         fireTrapTick: 0.7,
         maxEnergy: 100,
@@ -62,22 +62,22 @@ export const SETTINGS = {
         reviveAnimTime: 1.0
     },
 
-    itemDropRange: 300,
+    itemDropRange: 250,
 
     attackRocket: { speed: 600, damage: 15, radius: 60, lifetime: 4, energyCost: 10 },
 
     itemHealBox: {
         maxAimRadius: 200,
         duration: 0,
-        counts: 5,
+        counts: 6,
         radius: 170,
         value: 25,
-        tick: 1,
-        waitToBackZoom: 2
+        tick: 0.8,
+        waitToBackZoom: 1.2
     },
 
     itemEnergyDrink: {
-        duration: 10,
+        duration: 20,
         instantPlus: 0,
         totalTicks: 5,
         perTickPlus: 10,
@@ -88,17 +88,17 @@ export const SETTINGS = {
     itemMeteorStrike: {
         duration: 0,
         maxAimRadius: 650,
-        damage: 150,
+        damage: 200,
         radius: 250,
         meteorSpeed: 800,
         meteorAltitude: 600,
         meteorAngle: 45,
-        waitToBackZoom: 1.2
+        waitToBackZoom: 1.1
     },
 
-    itemHealPack: { duration: 10, value: 30, maxAimRadius: 0 },
-    itemInvincibleStar: { duration: 10, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
-    itemReviveFeather: { duration: 10 },
+    itemHealPack: { duration: 20, value: 30, maxAimRadius: 0 },
+    itemInvincibleStar: { duration: 20, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
+    itemReviveFeather: { duration: 0 },
 
     // 跳字全域預設值
     floatingText: {
