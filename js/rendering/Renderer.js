@@ -26,15 +26,17 @@ export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') 
         ctx.closePath();
         ctx.fill();
     } else if (type === 'ENERGY') {
+        // 與 EnergyDrink item icon 相同的閃電樣式
+        const scale = size / 18;
         ctx.fillStyle = color;
-        const s = size * 0.35;
         ctx.beginPath();
-        ctx.moveTo(-s * 0.3, -s);
-        ctx.lineTo(s * 0.2, -s * 0.1);
-        ctx.lineTo(-s * 0.1, -s * 0.1);
-        ctx.lineTo(s * 0.3, s);
-        ctx.lineTo(-s * 0.2, s * 0.1);
-        ctx.lineTo(s * 0.1, s * 0.1);
+        ctx.moveTo(-2 * scale, -7 * scale);
+        ctx.lineTo(3 * scale, -7 * scale);
+        ctx.lineTo(0, -1 * scale);
+        ctx.lineTo(4 * scale, -1 * scale);
+        ctx.lineTo(-2 * scale, 7 * scale);
+        ctx.lineTo(0, 1 * scale);
+        ctx.lineTo(-4 * scale, 1 * scale);
         ctx.closePath();
         ctx.fill();
     } else if (type === 'REVIVE') {
