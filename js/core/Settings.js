@@ -79,10 +79,7 @@ export const SETTINGS = {
     itemEnergyDrink: {
         duration: 20,
         instantPlus: 0,
-        totalTicks: 5,
-        perTickPlus: 10,
-        tickRate: 0.8,
-        waitToFirstTick: 0.4
+        effectDuration: 10
     },
 
     itemMeteorStrike: {

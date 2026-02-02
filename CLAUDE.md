@@ -189,7 +189,7 @@ resize 只改變畫布像素尺寸（viewport），不影響世界物件的位�
 ```js
 BUFF_TYPE = {
     INVINCIBLE: 'INVINCIBLE',    // 無敵（InvincibleStar, AutoRevive）
-    ENERGY_HOT: 'ENERGY_HOT',    // Energy HoT（EnergyDrink）
+    ENERGY_HOT: 'ENERGY_HOT',    // Energy 不扣減（EnergyDrink）
     REVIVE_BLINK: 'REVIVE_BLINK' // 復活保護（未來用）
 }
 
@@ -255,6 +255,11 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 | EnergyDrink | `onPassiveEffect()` | ENERGY_HOT | ENERGY |
 | AutoRevive | `onRevive()` | INVINCIBLE | REVIVE |
 | ReviveFeather | `onPassiveEffect()` | REVIVE_FEATHER | FEATHER |
+
+**EnergyDrink 邏輯：**
+- 效果期間 `consumeEnergy()` 不扣減 energy（`hasBuff(ENERGY_HOT)` → return true）
+- 使用 `addOrRefreshBuff`，重複撿取刷新時間
+- 參數：`instantPlus`（瞬間回復）、`effectDuration`（不扣減持續時間，def 10）
 
 **ReviveFeather 特殊邏輯：**
 - Buff 永久存在直到死亡時消耗（duration=999999）

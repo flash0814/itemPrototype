@@ -19,18 +19,14 @@ export class EnergyDrink extends ItemBase {
             restoreEnergy(cfg.instantPlus);
         }
 
-        // 徐徐增加（HoT 效果）
-        if (cfg.totalTicks > 0 && cfg.perTickPlus > 0) {
-            buffManager.addHoTBuff({
+        // Energy 不扣減 buff
+        if (cfg.effectDuration > 0) {
+            buffManager.addOrRefreshBuff({
                 type: BUFF_TYPE.ENERGY_HOT,
-                totalTicks: cfg.totalTicks,
-                perTickValue: cfg.perTickPlus,
-                tickRate: cfg.tickRate,
-                initialDelay: cfg.waitToFirstTick,
+                duration: cfg.effectDuration,
                 showIcon: true,
                 iconType: BUFF_ICON.ENERGY,
-                iconColor: SETTINGS.colors.energyDrink,
-                onTick: (value) => restoreEnergy(value)
+                iconColor: SETTINGS.colors.energyDrink
             });
         }
     }

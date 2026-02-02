@@ -37,10 +37,7 @@ export const inputs = {
     edrinkGroup: null,
     edrinkDur: null,
     edrinkInstant: null,
-    edrinkTicks: null,
-    edrinkPerTick: null,
-    edrinkTickRate: null,
-    edrinkWait: null,
+    edrinkEffect: null,
     // MeteorStrike
     meteorGroup: null,
     meteorDur: null,
@@ -85,10 +82,7 @@ export function initSettingsPanel() {
     inputs.edrinkGroup = document.getElementById('group-energydrink');
     inputs.edrinkDur = document.getElementById('inp-edrink-dur');
     inputs.edrinkInstant = document.getElementById('inp-edrink-instant');
-    inputs.edrinkTicks = document.getElementById('inp-edrink-ticks');
-    inputs.edrinkPerTick = document.getElementById('inp-edrink-pertick');
-    inputs.edrinkTickRate = document.getElementById('inp-edrink-tickrate');
-    inputs.edrinkWait = document.getElementById('inp-edrink-wait');
+    inputs.edrinkEffect = document.getElementById('inp-edrink-effect');
     inputs.meteorGroup = document.getElementById('group-meteorstrike');
     inputs.meteorDur = document.getElementById('inp-meteor-dur');
     inputs.meteorAim = document.getElementById('inp-meteor-aim');
@@ -168,10 +162,7 @@ export function initSettingsPanel() {
     // --- EnergyDrink ---
     inputs.edrinkDur.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.duration = Number(e.target.value));
     inputs.edrinkInstant.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.instantPlus = Number(e.target.value));
-    inputs.edrinkTicks.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.totalTicks = Math.max(0, parseInt(e.target.value)));
-    inputs.edrinkPerTick.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.perTickPlus = Number(e.target.value));
-    inputs.edrinkTickRate.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.tickRate = Number(e.target.value));
-    inputs.edrinkWait.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.waitToFirstTick = Number(e.target.value));
+    inputs.edrinkEffect.addEventListener('change', (e) => SETTINGS.itemEnergyDrink.effectDuration = Number(e.target.value));
 
     // --- MeteorStrike ---
     inputs.meteorDur.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.duration = Number(e.target.value));
@@ -226,10 +217,7 @@ export function syncInputsFromSettings() {
     // EnergyDrink
     inputs.edrinkDur.value = SETTINGS.itemEnergyDrink.duration;
     inputs.edrinkInstant.value = SETTINGS.itemEnergyDrink.instantPlus;
-    inputs.edrinkTicks.value = SETTINGS.itemEnergyDrink.totalTicks;
-    inputs.edrinkPerTick.value = SETTINGS.itemEnergyDrink.perTickPlus;
-    inputs.edrinkTickRate.value = SETTINGS.itemEnergyDrink.tickRate;
-    inputs.edrinkWait.value = SETTINGS.itemEnergyDrink.waitToFirstTick;
+    inputs.edrinkEffect.value = SETTINGS.itemEnergyDrink.effectDuration;
     // MeteorStrike
     inputs.meteorDur.value = SETTINGS.itemMeteorStrike.duration;
     inputs.meteorAim.value = SETTINGS.itemMeteorStrike.maxAimRadius;

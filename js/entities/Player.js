@@ -57,6 +57,8 @@ export function updateEnergy(dt) {
 // 消耗 energy，成功 return true
 export function consumeEnergy(amount, recoverCD = 0) {
     if (player.currentEnergy < amount) return false;
+    // ENERGY_HOT buff：不扣減 energy
+    if (buffManager.hasBuff(BUFF_TYPE.ENERGY_HOT)) return true;
     player.currentEnergy -= amount;
     if (recoverCD > 0) player.energyRecoverCD = recoverCD;
     return true;
