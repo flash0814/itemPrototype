@@ -7,8 +7,8 @@ import { ExplosionWave } from '../effects/ExplosionWave.js';
 export class Rocket extends Projectile {
     constructor(x, y, angle) {
         super(x, y, angle, SETTINGS.attackRocket.speed, SETTINGS.attackRocket.lifetime);
-        this.width = 16;
-        this.height = 8;
+        this.width = 20;
+        this.height = 10;
         this.trailTimer = 0;
     }
 

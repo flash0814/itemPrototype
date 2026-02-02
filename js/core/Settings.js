@@ -3,7 +3,7 @@ export const SETTINGS = {
     aspectRatio: 16 / 9,
     playerSpeed: 300,
     rotationSpeed: 15,
-    playerSize: 20,
+    playerSize: 24,
     gridSize: 50,
     aimIndicatorRadius: 8,
 

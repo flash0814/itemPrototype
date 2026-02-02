@@ -331,8 +331,8 @@ export function drawPlayerHPBar(ctx) {
 
     ctx.translate(player.x + shakeX, player.y + shakeY);
 
-    const barW = 40;
-    const barH = 5;
+    const barW = 48;
+    const barH = 6;
     const yOffset = -SETTINGS.playerSize - 15;
 
     // Buff icons（多 buff 左至右排列，整體置中）
@@ -356,7 +356,7 @@ export function drawPlayerHPBar(ctx) {
     ctx.strokeRect(-barW / 2 - 1, yOffset - 1, barW + 2, barH + 2);
 
     // Energy bar（HP 正下方）
-    const energyBarH = 4;
+    const energyBarH = 5;
     const energyY = yOffset + barH + 3;
     const energyPct = player.displayEnergy / player.maxEnergy;
 

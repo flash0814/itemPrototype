@@ -307,9 +307,27 @@ z = 30, vz = -200, gravity = 500, bounciness = 0.3
 
 grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|vz| < 100`。
 
+## 視覺尺寸基準
+
+所有視覺元素以 `SETTINGS.playerSize`（預設 24）為基準比例：
+
+| 元素 | 尺寸 | 備註 |
+|------|------|------|
+| 玩家三角 | playerSize (24) | 頂點/翼展直接使用 |
+| 無敵護盾 | playerSize * 1.5 = 36 | 六邊形半徑 |
+| 火箭 | 20×10 | 固定值 |
+| 煙霧粒子 | 4+rand*4, speed ±25 | |
+| 爆炸粒子 | 5+rand*5, speed 60+rand*125 | |
+| HP bar | 48×6 | 位於 y = -playerSize - 15 |
+| Energy bar | 48×5 | HP 正下方 +3px |
+| Buff icons | 22px (不隨 player 縮放) | HP bar 上方 -17px |
+| 死亡碎片/復活效果 | 使用 playerSize | 自動等比縮放 |
+| 地面道具 icon | perspectiveScale * 1.5 | 放大 50% |
+
 ## Inventory UI
 
-- 位置：畫布正上方中央
+- 位置：畫布底部中央（marginBottom=20px）
+- 框大小 58px，icon 縮放 2.4x
 - 始終顯示（空狀態為半透明暗框）
 - 交換時動畫：舊道具向上淡出（0.4s），新道具從下滑入+縮放（0.3s easeOutQuad）
 - 動畫狀態存於 `gameState.inventoryAnim`
@@ -318,8 +336,9 @@ grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|
 
 - Player Settings：PlayerStatus / RocketAttack 子群組
 - General Settings：FireTrap 參數
-- Items：HealBox / HealPack / InvincibleStar 三選一，各有獨立參數群組
+- Items：HealBox / HealPack / InvincibleStar / EnergyDrink / MeteorStrike / ReviveFeather 六選一，各有獨立參數群組
 - `gameState.currentItemType` 決定 R 鍵生成哪種道具
+- Panel 內 select/input 元素在 keydown 時自動 `preventDefault + blur`，防止原生鍵盤行為攔截遊戲按鍵
 
 ## 已知 Bug 與修復紀錄
 

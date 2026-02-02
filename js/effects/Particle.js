@@ -6,17 +6,17 @@ export class Particle {
         this.life = 0.5 + Math.random() * 0.5;
 
         if (type === 'smoke') {
-            this.vx = (Math.random() - 0.5) * 20;
-            this.vy = (Math.random() - 0.5) * 20;
-            this.size = 3 + Math.random() * 3;
+            this.vx = (Math.random() - 0.5) * 25;
+            this.vy = (Math.random() - 0.5) * 25;
+            this.size = 4 + Math.random() * 4;
             this.color = '#aaaaaa';
             this.life = 0.4;
         } else if (type === 'explosion') {
             const angle = Math.random() * Math.PI * 2;
-            const speed = 50 + Math.random() * 100;
+            const speed = 60 + Math.random() * 125;
             this.vx = Math.cos(angle) * speed;
             this.vy = Math.sin(angle) * speed;
-            this.size = 4 + Math.random() * 4;
+            this.size = 5 + Math.random() * 5;
             this.color = '#ffaa00';
         } else if (type === 'energy') {
             this.vx = (Math.random() - 0.5) * 20;
