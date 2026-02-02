@@ -13,6 +13,7 @@ import { InvincibleStar } from '../items/InvincibleStar.js';
 import { EnergyDrink } from '../items/EnergyDrink.js';
 import { MeteorStrike } from '../items/MeteorStrike.js';
 import { ReviveFeather } from '../items/ReviveFeather.js';
+import { Bomb } from '../items/Bomb.js';
 import { initSettingsPanel } from '../ui/SettingsPanel.js';
 import {
     drawGrid,
@@ -234,14 +235,18 @@ function tryThrowItem() {
     const waitTime = (SETTINGS[cfgKey] && SETTINGS[cfgKey].waitToBackZoom) || 0;
 
     player.heldItem = null;
-
     item.isHeld = false;
-    item.x = aimPos.x;
-    item.y = aimPos.y;
-    item.z = 150;
-    item.vz = 0;
-    item.isGrounded = false;
-    item.activate();
+
+    if (item instanceof Bomb) {
+        item.activate(aimPos.x, aimPos.y);
+    } else {
+        item.x = aimPos.x;
+        item.y = aimPos.y;
+        item.z = 150;
+        item.vz = 0;
+        item.isGrounded = false;
+        item.activate();
+    }
 
     // 離開 aiming，設定等待後回復 zoom
     const cam = gameState.camera;
@@ -316,6 +321,8 @@ function spawnItem() {
                 newItem = new MeteorStrike(rx, ry);
             } else if (gameState.currentItemType === 'ReviveFeather') {
                 newItem = new ReviveFeather(rx, ry);
+            } else if (gameState.currentItemType === 'Bomb') {
+                newItem = new Bomb(rx, ry);
             }
             if (newItem) gameState.activeItems.push(newItem);
             return;

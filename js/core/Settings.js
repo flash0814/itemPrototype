@@ -42,7 +42,10 @@ export const SETTINGS = {
         rocket: '#ffaa00',
         rocketExplosion: 'rgba(255, 100, 0, 0.8)',
         meteorStrike: '#cc3333',
-        meteorGlow: 'rgba(255, 100, 30, 0.6)'
+        meteorGlow: 'rgba(255, 100, 30, 0.6)',
+        bomb: '#aa44ff',
+        bombDark: '#6622aa',
+        bombExplosion: 'rgba(255, 50, 30, 0.8)'
     },
 
     general: {
@@ -96,6 +99,7 @@ export const SETTINGS = {
     itemHealPack: { duration: 20, value: 30, maxAimRadius: 0 },
     itemInvincibleStar: { duration: 20, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
     itemReviveFeather: { duration: 0 },
+    itemBomb: { duration: 0, maxAimRadius: 250, damage: 100, radius: 110, throwSpeed: 500, waitToBackZoom: 1.0 },
 
     // 跳字全域預設值
     floatingText: {

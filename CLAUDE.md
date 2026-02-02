@@ -40,6 +40,7 @@ js/
     EnergyDrink.js       — 被動道具：能量飲料 HoT（PASSIVE）
     MeteorStrike.js      — 主動道具：隕石打擊（ACTIVE, 需瞄準丟出）
     ReviveFeather.js     — 被動道具：復活羽毛（PASSIVE, 死亡時消耗快速復活）
+    Bomb.js              — 主動道具：炸彈（ACTIVE, 拋物線飛行+範圍爆炸）
   projectiles/
     Projectile.js        — 彈射物基類
     Rocket.js            — 火箭（含爆炸波）
@@ -290,6 +291,17 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 - **地上（未啟動）**：用 `duration` 計時，到期消失（0=永久）
 - **丟出（已啟動 isActivated）**：ItemBase 自動跳過 duration 倒數（`!isActivated` 條件），改由 tick 完成 + pulse 結束判定死亡
 - 落地前不計時：HealBox 覆寫 `update()`，未落地時只跑物理，不執行 `super.update()` 和 tick 邏輯
+
+### Bomb 拋物線飛行
+
+Bomb 是唯一從玩家位置飛到目標的 ACTIVE 道具（其他 ACTIVE 瞬移到目標上方垂直落下）：
+- `tryThrowItem()` 中 `instanceof Bomb` 特殊分支，不設 `item.x/y` 到目標
+- `activate(targetX, targetY)` 計算水平速度（`throwSpeed`）和初始 `vz`
+- `vz` 根據飛行時間反算，讓炸彈自動落在目標點（距離近弧低，距離遠弧高）
+- 飛行中 gravity=800，落地觸發 `explode()`
+- 爆炸效果同 Rocket 但紅色（`bombExplosion` 粒子 + 紅色 `ExplosionWave`）
+- 傷害判定同 MeteorStrike（含自傷 + 場景物件）
+- `ExplosionWave` 支援可選顏色參數（向後相容，預設仍為 rocket 橘色）
 
 ### 道具交換（swap）
 

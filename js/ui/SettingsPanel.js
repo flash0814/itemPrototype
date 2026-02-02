@@ -47,7 +47,13 @@ export const inputs = {
     // ReviveFeather
     featherGroup: null,
     featherDur: null,
-    featherRevive: null
+    featherRevive: null,
+    // Bomb
+    bombGroup: null,
+    bombDur: null,
+    bombAim: null,
+    bombDmg: null,
+    bombRad: null
 };
 
 export function initSettingsPanel() {
@@ -91,6 +97,11 @@ export function initSettingsPanel() {
     inputs.featherGroup = document.getElementById('group-revivefeather');
     inputs.featherDur = document.getElementById('inp-feather-dur');
     inputs.featherRevive = document.getElementById('inp-feather-revive');
+    inputs.bombGroup = document.getElementById('group-bomb');
+    inputs.bombDur = document.getElementById('inp-bomb-dur');
+    inputs.bombAim = document.getElementById('inp-bomb-aim');
+    inputs.bombDmg = document.getElementById('inp-bomb-dmg');
+    inputs.bombRad = document.getElementById('inp-bomb-rad');
 
     // --- Player Settings ---
     inputs.playerSettingsSelect.addEventListener('change', (e) => {
@@ -126,6 +137,7 @@ export function initSettingsPanel() {
         inputs.edrinkGroup.classList.add('hidden');
         inputs.meteorGroup.classList.add('hidden');
         inputs.featherGroup.classList.add('hidden');
+        inputs.bombGroup.classList.add('hidden');
 
         if (e.target.value === 'HealBox') {
             inputs.healboxGroup.classList.remove('hidden');
@@ -139,6 +151,8 @@ export function initSettingsPanel() {
             inputs.meteorGroup.classList.remove('hidden');
         } else if (e.target.value === 'ReviveFeather') {
             inputs.featherGroup.classList.remove('hidden');
+        } else if (e.target.value === 'Bomb') {
+            inputs.bombGroup.classList.remove('hidden');
         }
     });
 
@@ -169,6 +183,12 @@ export function initSettingsPanel() {
     inputs.meteorAim.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.maxAimRadius = Number(e.target.value));
     inputs.meteorDmg.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.damage = Number(e.target.value));
     inputs.meteorRad.addEventListener('change', (e) => SETTINGS.itemMeteorStrike.radius = Number(e.target.value));
+
+    // --- Bomb ---
+    inputs.bombDur.addEventListener('change', (e) => SETTINGS.itemBomb.duration = Number(e.target.value));
+    inputs.bombAim.addEventListener('change', (e) => SETTINGS.itemBomb.maxAimRadius = Number(e.target.value));
+    inputs.bombDmg.addEventListener('change', (e) => SETTINGS.itemBomb.damage = Number(e.target.value));
+    inputs.bombRad.addEventListener('change', (e) => SETTINGS.itemBomb.radius = Number(e.target.value));
 
     // --- ReviveFeather ---
     inputs.featherDur.addEventListener('change', (e) => SETTINGS.itemReviveFeather.duration = Number(e.target.value));
@@ -226,4 +246,9 @@ export function syncInputsFromSettings() {
     // ReviveFeather
     inputs.featherDur.value = SETTINGS.itemReviveFeather.duration;
     inputs.featherRevive.value = SETTINGS.deathRevive.reviveItemTime;
+    // Bomb
+    inputs.bombDur.value = SETTINGS.itemBomb.duration;
+    inputs.bombAim.value = SETTINGS.itemBomb.maxAimRadius;
+    inputs.bombDmg.value = SETTINGS.itemBomb.damage;
+    inputs.bombRad.value = SETTINGS.itemBomb.radius;
 }
