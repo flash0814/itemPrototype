@@ -374,10 +374,13 @@ export function drawPlayerHPBar(ctx) {
 }
 
 // 繪製持有道具 UI（始終顯示）
+// 位置參數：boxSize 控制框大小，marginBottom 控制離底部距離，iconScale 控制 icon 縮放
 export function drawHeldItemUI(ctx) {
-    const boxSize = 48;
+    const boxSize = 58;          // 框大小（原 48，放大 20%）
+    const iconScale = 2.4;      // icon 縮放（原 2，放大 20%）
+    const marginBottom = 20;    // 離畫布底部的距離（px）
     const x = gameState.width / 2;
-    const y = 20 + boxSize / 2;
+    const y = gameState.height - marginBottom - boxSize / 2;
     const anim = gameState.inventoryAnim;
 
     ctx.save();
@@ -389,11 +392,11 @@ export function drawHeldItemUI(ctx) {
     ctx.fillRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
     ctx.strokeRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
 
-    // 標題
+    // 標題（框上方）
     ctx.fillStyle = player.heldItem ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.font = '10px Arial';
+    ctx.font = '12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('[F] Use', x, y - boxSize / 2 - 4);
+    ctx.fillText('[F] Use', x, y - boxSize / 2 - 5);
 
     // 離開動畫（舊道具向上淡出）
     if (anim.exitTimer > 0 && anim.exitIcon) {
@@ -401,7 +404,7 @@ export function drawHeldItemUI(ctx) {
         ctx.save();
         ctx.globalAlpha = p;
         ctx.translate(x, y - (1 - p) * 20);
-        ctx.scale(2, 2);
+        ctx.scale(iconScale, iconScale);
         anim.exitIcon(ctx);
         ctx.restore();
     }
@@ -415,11 +418,11 @@ export function drawHeldItemUI(ctx) {
             const ease = 1 - (1 - p) * (1 - p); // easeOutQuad
             ctx.globalAlpha = ease;
             ctx.translate(x, y + (1 - ease) * 20);
-            const s = 1.5 + 0.5 * ease;
+            const s = (iconScale * 0.75) + (iconScale * 0.25) * ease;
             ctx.scale(s, s);
         } else {
             ctx.translate(x, y);
-            ctx.scale(2, 2);
+            ctx.scale(iconScale, iconScale);
         }
         player.heldItem.drawIcon(ctx);
         ctx.restore();
