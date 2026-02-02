@@ -195,13 +195,17 @@ export function initSettingsPanel() {
     inputs.featherRevive.addEventListener('change', (e) => SETTINGS.deathRevive.reviveItemTime = Number(e.target.value));
 
     // --- 防止 panel 元素 focus 時攔截遊戲按鍵 ---
-    // select/input 在 keydown 時：阻止原生行為（防止 select 跳選項）+ 立即 blur
-    document.querySelectorAll('#settings-panel select, #settings-panel input').forEach(el => {
+    // select：keydown 時 preventDefault + blur（防止方向鍵跳選項觸發 R/F 等遊戲鍵）
+    document.querySelectorAll('#settings-panel select').forEach(el => {
         el.addEventListener('change', () => el.blur());
         el.addEventListener('keydown', (e) => {
             e.preventDefault();
             el.blur();
         });
+    });
+    // input：允許打字，只在 change 後 blur（讓 focus 回到遊戲）
+    document.querySelectorAll('#settings-panel input').forEach(el => {
+        el.addEventListener('change', () => el.blur());
     });
 
     // --- Sync DOM inputs from SETTINGS ---
