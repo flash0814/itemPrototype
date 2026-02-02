@@ -17,7 +17,7 @@ export class InvincibleStar extends ItemBase {
     }
 
     onPassiveEffect() {
-        buffManager.addBuff({
+        buffManager.addOrRefreshBuff({
             id: 'invincible',
             type: BUFF_TYPE.INVINCIBLE,
             duration: this.effectDuration,

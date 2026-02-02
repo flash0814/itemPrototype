@@ -227,6 +227,7 @@ BUFF_ICON = {
 | 函式 | 用途 |
 |------|------|
 | `addBuff(config)` | 新增一般 buff，回傳 buff 物件 |
+| `addOrRefreshBuff(config)` | 同 type 已存在則移除舊的再加新的（用於 unique buff 如無敵） |
 | `addHoTBuff(config)` | 新增 HoT buff（自動計算 duration） |
 | `removeBuff(id)` | 移除指定 id 的 buff |
 | `hasBuff(type)` | 檢查是否有指定類型的 buff |

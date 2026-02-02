@@ -163,7 +163,7 @@ export function onRevive() {
     player.damageFlashTimer = 0;
 
     // 復活無敵 buff（顯示 REVIVE icon）
-    buffManager.addBuff({
+    buffManager.addOrRefreshBuff({
         id: 'reviveBlink',
         type: BUFF_TYPE.INVINCIBLE,
         duration: SETTINGS.deathRevive.reviveInvincibleTime,

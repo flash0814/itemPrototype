@@ -50,6 +50,19 @@ export const buffManager = {
     },
 
     /**
+     * 新增或刷新 buff：同 type 已存在則移除舊的再加新的
+     */
+    addOrRefreshBuff(config) {
+        // 移除同 type 的所有舊 buff
+        for (let i = this.buffs.length - 1; i >= 0; i--) {
+            if (this.buffs[i].type === config.type) {
+                this.buffs.splice(i, 1);
+            }
+        }
+        return this.addBuff(config);
+    },
+
+    /**
      * 新增 HoT (Heal over Time) buff
      * @param {Object} config
      * @param {string} config.type - BUFF_TYPE
