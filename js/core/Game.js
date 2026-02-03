@@ -242,7 +242,7 @@ function tryThrowItem() {
     } else {
         item.x = aimPos.x;
         item.y = aimPos.y;
-        item.z = 150;
+        item.z = 50;
         item.vz = 0;
         item.isGrounded = false;
         item.activate();

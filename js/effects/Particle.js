@@ -51,7 +51,7 @@ export class Particle {
             // heal
             this.vx = (Math.random() - 0.5) * 30;
             this.vy = -80 - Math.random() * 80;
-            this.size = 6 + Math.random() * 4;
+            this.size = 15 + Math.random() * 4;
             this.color = '#00ff00';
         }
     }

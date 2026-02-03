@@ -99,7 +99,7 @@ export const SETTINGS = {
     itemHealPack: { duration: 20, value: 30, maxAimRadius: 0 },
     itemInvincibleStar: { duration: 20, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
     itemReviveFeather: { duration: 0 },
-    itemBomb: { duration: 0, maxAimRadius: 250, damage: 100, radius: 110, throwSpeed: 500, waitToBackZoom: 1.0 },
+    itemBomb: { duration: 0, maxAimRadius: 320, damage: 100, radius: 110, throwSpeed: 300, waitToBackZoom: 1.0 },
 
     // 跳字全域預設值
     floatingText: {
