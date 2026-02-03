@@ -18,8 +18,17 @@ body {
 
 canvas {
     display: block;
-    background-color: #16161a;
     cursor: crosshair;
+}
+
+/* 2D Canvas (gameCanvas) - Phase 1 暫時隱藏以測試 3D */
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    background-color: transparent;
+    display: none;  /* Phase 1: 暫時隱藏 2D canvas */
 }
 
 .ui-overlay {
