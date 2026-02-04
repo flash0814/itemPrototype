@@ -2,128 +2,226 @@
  * BuffIcons3D.js - 3D Buff 圖示
  *
  * 顯示在玩家頭上的 buff 狀態圖示
+ * 使用 Canvas texture 繪製 2D 風格的 icon + 進度外框
+ * 移植自 2D 版本的 Renderer.drawBuffIcons
  */
 
 import * as THREE from 'three';
-
-// Buff 類型定義
-export const BUFF_TYPE_3D = {
-    INVINCIBLE: 'INVINCIBLE',
-    ENERGY_BUFF: 'ENERGY_BUFF',
-    REVIVE_FEATHER: 'REVIVE_FEATHER'
-};
+import { buffManager3D, BUFF_ICON_3D } from '../core3d/BuffManager3D.js';
 
 export class BuffIcons3D {
     constructor(scene) {
         this.scene = scene;
 
         // 配置
-        this.iconSize = 0.2;
-        this.spacing = 0.25;
-        this.offsetY = 1.3;  // 血條上方
+        this.iconSize = 32;       // Canvas 上的 icon 大小
+        this.worldScale = 0.02;   // 3D 世界中的縮放
+        this.spacing = 0.3;       // 圖示間距
+        this.offsetY = 1.5;       // HP 上方（HP top = 1.372）
 
         // 圖示容器
         this.group = new THREE.Group();
-        this.icons = new Map();  // buffType -> { mesh, startTime, duration }
+        this.sprites = [];        // { sprite, canvas, ctx, texture }
 
         this.scene.add(this.group);
     }
 
     /**
-     * 新增或更新 buff 圖示
+     * 繪製單個 buff icon 到 canvas
      */
-    addBuff(type, duration, color = 0xffffff) {
-        // 移除舊的同類 buff
-        if (this.icons.has(type)) {
-            this.removeBuff(type);
-        }
+    drawIcon(ctx, size, progress, color, iconType) {
+        const halfSize = size / 2;
 
-        // 建立圖示 mesh
-        const mesh = this.createIconMesh(type, color);
-        this.group.add(mesh);
+        ctx.clearRect(0, 0, size, size);
+        ctx.save();
+        ctx.translate(halfSize, halfSize);
 
-        this.icons.set(type, {
-            mesh,
-            startTime: performance.now() / 1000,
-            duration,
-            color
-        });
+        // 背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(-halfSize, -halfSize, size, size);
 
-        this.arrangeIcons();
+        // 繪製 icon 形狀
+        ctx.fillStyle = color;
+        this.drawIconShape(ctx, iconType, size * 0.7);
+
+        // 繪製進度外框（從頂部中央逆時針）
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'butt';
+        this.drawProgressBorder(ctx, size, progress);
+
+        ctx.restore();
     }
 
-    createIconMesh(type, color) {
-        let geometry;
+    /**
+     * 繪製 icon 形狀
+     */
+    drawIconShape(ctx, iconType, size) {
+        const s = size / 2;
 
-        switch (type) {
-            case BUFF_TYPE_3D.INVINCIBLE:
-                // 盾牌（六邊形）
-                geometry = new THREE.CircleGeometry(this.iconSize * 0.5, 6);
+        switch (iconType) {
+            case BUFF_ICON_3D.SHIELD:
+                // 盾牌形狀
+                ctx.beginPath();
+                ctx.moveTo(0, s * 0.7);
+                ctx.lineTo(s * 0.7, 0);
+                ctx.lineTo(s * 0.7, -s * 0.35);
+                ctx.lineTo(0, -s * 0.7);
+                ctx.lineTo(-s * 0.7, -s * 0.35);
+                ctx.lineTo(-s * 0.7, 0);
+                ctx.closePath();
+                ctx.fill();
                 break;
 
-            case BUFF_TYPE_3D.ENERGY_BUFF:
-                // 閃電（菱形）
-                geometry = new THREE.BufferGeometry();
-                const s = this.iconSize * 0.5;
-                const vertices = new Float32Array([
-                    0, s, 0,
-                    s * 0.5, 0, 0,
-                    0, -s, 0,
-                    -s * 0.5, 0, 0
-                ]);
-                const indices = [0, 1, 3, 1, 2, 3];
-                geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                geometry.setIndex(indices);
+            case BUFF_ICON_3D.ENERGY:
+                // 閃電形狀
+                const scale = size / 18;
+                ctx.beginPath();
+                ctx.moveTo(-2 * scale, -7 * scale);
+                ctx.lineTo(3 * scale, -7 * scale);
+                ctx.lineTo(0, -1 * scale);
+                ctx.lineTo(4 * scale, -1 * scale);
+                ctx.lineTo(-2 * scale, 7 * scale);
+                ctx.lineTo(0, 1 * scale);
+                ctx.lineTo(-4 * scale, 1 * scale);
+                ctx.closePath();
+                ctx.fill();
                 break;
 
-            case BUFF_TYPE_3D.REVIVE_FEATHER:
-                // 羽毛（橢圓）
-                geometry = new THREE.CircleGeometry(this.iconSize * 0.4, 16);
+            case BUFF_ICON_3D.REVIVE:
+                // 菱形
+                ctx.beginPath();
+                ctx.moveTo(0, -s * 0.5);
+                ctx.lineTo(s * 0.35, 0);
+                ctx.lineTo(0, s * 0.5);
+                ctx.lineTo(-s * 0.35, 0);
+                ctx.closePath();
+                ctx.fill();
+                break;
+
+            case BUFF_ICON_3D.FEATHER:
+                // 羽毛形狀
+                const fs = s * 0.6;
+                ctx.beginPath();
+                ctx.moveTo(0, -fs);
+                ctx.quadraticCurveTo(fs * 0.6, -fs * 0.3, fs * 0.3, fs * 0.8);
+                ctx.lineTo(0, fs);
+                ctx.lineTo(-fs * 0.1, fs * 0.6);
+                ctx.quadraticCurveTo(-fs * 0.3, 0, 0, -fs);
+                ctx.closePath();
+                ctx.fill();
+                // 羽毛中軸線
+                ctx.strokeStyle = ctx.fillStyle;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, -fs * 0.8);
+                ctx.quadraticCurveTo(fs * 0.2, 0, 0, fs * 0.8);
+                ctx.stroke();
                 break;
 
             default:
-                geometry = new THREE.CircleGeometry(this.iconSize * 0.4, 16);
-        }
-
-        const material = new THREE.MeshBasicMaterial({
-            color,
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.userData.type = type;
-        return mesh;
-    }
-
-    /**
-     * 移除 buff 圖示
-     */
-    removeBuff(type) {
-        const icon = this.icons.get(type);
-        if (icon) {
-            this.group.remove(icon.mesh);
-            icon.mesh.geometry.dispose();
-            icon.mesh.material.dispose();
-            this.icons.delete(type);
-            this.arrangeIcons();
+                // 預設圓形
+                ctx.beginPath();
+                ctx.arc(0, 0, s * 0.4, 0, Math.PI * 2);
+                ctx.fill();
         }
     }
 
     /**
-     * 排列圖示（置中）
+     * 繪製進度外框（從頂部中央逆時針減少）
      */
-    arrangeIcons() {
-        const count = this.icons.size;
-        if (count === 0) return;
+    drawProgressBorder(ctx, size, progress) {
+        if (progress <= 0) return;
 
-        const totalWidth = count * this.spacing;
-        let x = -totalWidth / 2 + this.spacing / 2;
+        const w = size - 4;  // 留邊距
+        const h = size - 4;
+        const halfW = w / 2;
+        const halfH = h / 2;
 
-        for (const [type, icon] of this.icons) {
-            icon.mesh.position.x = x;
-            x += this.spacing;
+        // 總周長 = w + w + h + h = 2w + 2h
+        const perimeter = 2 * w + 2 * h;
+        const drawLength = perimeter * progress;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -halfH);  // 頂部中央
+
+        let remaining = drawLength;
+
+        // Segment 1: 頂部中央 → 左上（向左）
+        const seg1 = halfW;
+        if (remaining > 0) {
+            const draw = Math.min(remaining, seg1);
+            ctx.lineTo(-draw, -halfH);
+            remaining -= draw;
+        }
+
+        // Segment 2: 左上 → 左下（向下）
+        const seg2 = h;
+        if (remaining > 0) {
+            const draw = Math.min(remaining, seg2);
+            ctx.lineTo(-halfW, -halfH + draw);
+            remaining -= draw;
+        }
+
+        // Segment 3: 左下 → 右下（向右）
+        const seg3 = w;
+        if (remaining > 0) {
+            const draw = Math.min(remaining, seg3);
+            ctx.lineTo(-halfW + draw, halfH);
+            remaining -= draw;
+        }
+
+        // Segment 4: 右下 → 右上（向上）
+        const seg4 = h;
+        if (remaining > 0) {
+            const draw = Math.min(remaining, seg4);
+            ctx.lineTo(halfW, halfH - draw);
+            remaining -= draw;
+        }
+
+        // Segment 5: 右上 → 頂部中央（向左回到起點）
+        const seg5 = halfW;
+        if (remaining > 0) {
+            const draw = Math.min(remaining, seg5);
+            ctx.lineTo(halfW - draw, -halfH);
+            remaining -= draw;
+        }
+
+        ctx.stroke();
+    }
+
+    /**
+     * 確保有足夠的 sprite
+     */
+    ensureSprites(count) {
+        // 移除多餘的
+        while (this.sprites.length > count) {
+            const item = this.sprites.pop();
+            this.group.remove(item.sprite);
+            item.texture.dispose();
+            item.sprite.material.dispose();
+        }
+
+        // 新增不足的
+        while (this.sprites.length < count) {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.iconSize;
+            canvas.height = this.iconSize;
+            const ctx = canvas.getContext('2d');
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true
+            });
+
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(this.iconSize * this.worldScale, this.iconSize * this.worldScale, 1);
+
+            this.group.add(sprite);
+            this.sprites.push({ sprite, canvas, ctx, texture });
         }
     }
 
@@ -131,61 +229,73 @@ export class BuffIcons3D {
      * 更新
      */
     update(position, camera, dt) {
+        // 取得可見 buff
+        const visibleBuffs = buffManager3D.getVisibleBuffs();
+        const count = visibleBuffs.length;
+
+        // 確保有足夠的 sprite
+        this.ensureSprites(count);
+
+        if (count === 0) {
+            this.group.visible = false;
+            return;
+        }
+
+        this.group.visible = true;
+
         // 位置
         this.group.position.set(position.x, position.y + this.offsetY, position.z);
 
-        // Billboard
+        // Billboard（面向攝影機）
         this.group.quaternion.copy(camera.quaternion);
 
-        // 更新每個圖示
-        const now = performance.now() / 1000;
-        const toRemove = [];
+        // 排列圖示（置中，新的在右邊）
+        const totalWidth = count * this.spacing;
+        let x = -totalWidth / 2 + this.spacing / 2;
 
-        for (const [type, icon] of this.icons) {
-            const elapsed = now - icon.startTime;
-            const remaining = icon.duration - elapsed;
-            const progress = remaining / icon.duration;
+        const now = Date.now();
 
-            // 時間到了移除
-            if (remaining <= 0) {
-                toRemove.push(type);
-                continue;
+        visibleBuffs.forEach((buff, i) => {
+            const item = this.sprites[i];
+            const progress = 1 - (buff.elapsed / buff.duration);
+
+            // 閃爍效果（progress <= 0.4 時）
+            let alpha = 1;
+            if (progress <= 0.4) {
+                const blink = Math.sin(now / 1000 * 12.56);
+                alpha = 0.3 + 0.7 * ((blink + 1) / 2);
             }
 
-            // 倒數動畫（閃爍 + 縮放）
-            if (progress < 0.3) {
-                // 閃爍
-                const flash = Math.sin(now * 12) > 0;
-                icon.mesh.material.opacity = flash ? 0.9 : 0.4;
-                // 縮放
-                const scale = 0.8 + progress * 0.7;
-                icon.mesh.scale.setScalar(scale);
-            } else {
-                icon.mesh.material.opacity = 0.9;
-                icon.mesh.scale.setScalar(1);
-            }
+            // 繪製 icon
+            this.drawIcon(item.ctx, this.iconSize, progress, buff.iconColor, buff.iconType);
+            item.texture.needsUpdate = true;
 
-            // 旋轉動畫
-            icon.mesh.rotation.z = Math.sin(now * 2) * 0.1;
-        }
+            // 設定透明度
+            item.sprite.material.opacity = alpha;
 
-        // 移除過期的
-        toRemove.forEach(type => this.removeBuff(type));
+            // 位置
+            item.sprite.position.x = x;
+            x += this.spacing;
+        });
     }
 
     /**
-     * 清除所有 buff
+     * 設定可見性
      */
-    clearAll() {
-        for (const [type, icon] of this.icons) {
-            this.group.remove(icon.mesh);
-            icon.mesh.geometry.dispose();
-            icon.mesh.material.dispose();
-        }
-        this.icons.clear();
-    }
-
     setVisible(visible) {
         this.group.visible = visible;
+    }
+
+    /**
+     * 銷毀
+     */
+    destroy() {
+        this.sprites.forEach(item => {
+            this.group.remove(item.sprite);
+            item.texture.dispose();
+            item.sprite.material.dispose();
+        });
+        this.sprites = [];
+        this.scene.remove(this.group);
     }
 }

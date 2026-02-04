@@ -11,9 +11,9 @@ export class HealthBar3D {
         this.scene = scene;
 
         // 尺寸
-        this.width = 1.2;
-        this.height = 0.12;
-        this.offsetY = 1.1;  // 玩家頭上高度
+        this.width = 1.02;    // 原 1.2，縮短 15%
+        this.height = 0.144;  // 原 0.12，加厚 20%
+        this.offsetY = 1.3;   // 上移，不蓋頭
 
         // 狀態
         this.currentHP = 1;

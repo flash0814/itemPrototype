@@ -10,10 +10,10 @@ export class EnergyBar3D {
     constructor(scene) {
         this.scene = scene;
 
-        // 尺寸（比血條小一點）
-        this.width = 1.0;
-        this.height = 0.08;
-        this.offsetY = 0.95;  // 血條下方
+        // 尺寸（與 HP 同寬，厚度為 HP 一半）
+        this.width = 1.02;    // 與 HP 同寬
+        this.height = 0.072;  // HP 厚度的一半
+        this.offsetY = 1.16;  // 緊貼 HP 下方
 
         // 狀態
         this.currentEnergy = 1;

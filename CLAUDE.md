@@ -6,11 +6,13 @@
 部署於 GitHub Pages: `https://flash0814.github.io/itemPrototype/`
 本地開發使用 `npx serve .` (port 3000)。
 
-**3D 重構狀態：Phase 1-12 完成**
+**3D 重構狀態：Phase 1-12 完成 + 視覺強化**
 - 原生 3D 座標系統（非 2D 邏輯 + 3D 渲染層）
 - Overcooked 風格：明亮、圓潤、MeshToonMaterial
-- 完整特效系統（粒子、爆炸波）
+- 完整特效系統（粒子、爆炸波、死亡碎片）
 - 完整 UI 系統（血條、buff 圖示、浮動文字、道具欄）
+- 中央 Buff 管理系統（BuffManager3D）
+- 強化火箭視覺（多層尾焰 + 拖尾煙霧）
 
 ## 技術架構
 
@@ -37,8 +39,9 @@ js/
     Camera3D.js          — 65° pitch 攝影機 + zoom 系統
     Ground3D.js          — 地面（奶白色）
     Wall3D.js            — 邊界牆（木質棕）
+    BuffManager3D.js     — 中央 Buff 管理系統
   entities3d/
-    Player3D.js          — 玩家（膠囊體 + 眼睛）
+    Player3D.js          — 玩家（膠囊體 + 眼睛 + 死亡狀態機）
     Obstacle3D.js        — 障礙物（圓角木箱 + 碰撞）
     FireTrap3D.js        — 火焰陷阱（卡通火焰 + 傷害）
   items3d/
@@ -51,16 +54,18 @@ js/
     MeteorStrike3D.js    — ACTIVE：隕石打擊
     Bomb3D.js            — ACTIVE：拋物線炸彈
   projectiles3d/
-    Rocket3D.js          — 火箭（卡通造型 + 爆炸）
+    Rocket3D.js          — 火箭（飛彈造型 + 多層尾焰 + 拖尾煙霧）
   effects3d/
     Particle3D.js        — 3D 粒子（多種類型）
     ExplosionWave3D.js   — 地面爆炸波圈
     EffectsManager3D.js  — 特效管理器
+    DeathEffect3D.js     — 死亡碎片 + 復活合體特效
   ui3d/
     AimingUI3D.js        — 地面瞄準圈
-    HealthBar3D.js       — 3D 血條（billboard）
-    EnergyBar3D.js       — 3D 能量條
-    BuffIcons3D.js       — Buff 圖示
+    PlayerStatusUI3D.js  — 統一 HP/Energy 條（billboard，解決 zoom 分離問題）
+    HealthBar3D.js       — (舊版，由 PlayerStatusUI3D 取代)
+    EnergyBar3D.js       — (舊版，由 PlayerStatusUI3D 取代)
+    BuffIcons3D.js       — Buff 圖示（Canvas texture 繪製）
     FloatingText3D.js    — 浮動文字（傷害/治療數字）
     InventoryUI3D.js     — 道具欄（HTML overlay）
   ui/
@@ -208,6 +213,40 @@ effects3d.deathEffect(x, z)               // 灰煙 + 紅星
 effects3d.pickupEffect(x, z, color)       // 彩色星星上升
 ```
 
+### 死亡/復活特效（DeathEffect3D）
+
+獨立的碎片系統，不使用 EffectsManager3D：
+
+```js
+// main.js
+import { DeathEffect3D } from './effects3d/DeathEffect3D.js';
+const deathEffect = new DeathEffect3D(scene);
+
+// 死亡時啟動
+player3d.onDeath = (pos, hadFeather) => {
+    deathEffect.startDeath(pos);  // 角色爆成碎片，落地彈跳
+};
+
+// 復活時啟動
+player3d.onReviveStart = (pos) => {
+    deathEffect.startRevive(pos);  // 碎片飛回合體 + 光柱
+};
+
+// update 中更新
+deathEffect.update(dt);
+```
+
+**碎片物理**：
+- 12 個實體碎片（低透明度）
+- 向外爆炸 + 重力下落
+- 落地彈跳（2-3 次）
+- 停留在地面等待復活
+
+**復活動畫**：
+- 光柱 + 地面光圈
+- 碎片飛回中心合體
+- 縮小消失 → 玩家 mesh 顯示
+
 ## UI 系統
 
 ### 世界空間 UI（billboard）
@@ -221,14 +260,37 @@ effects3d.pickupEffect(x, z, color)       // 彩色星星上升
 - **InventoryUI3D**：底部中央，顯示持有的 ACTIVE 道具
 - **FloatingText3D**：傷害/治療數字，bounce 動畫
 
-### Buff 圖示
+### Buff 系統（BuffManager3D）
 
 ```js
+// js/core3d/BuffManager3D.js
+import { buffManager3D, BUFF_TYPE_3D, BUFF_ICON_3D } from './core3d/BuffManager3D.js';
+
 BUFF_TYPE_3D = {
-    INVINCIBLE: 'INVINCIBLE',      // 盾牌
-    ENERGY_BUFF: 'ENERGY_BUFF',    // 菱形
-    REVIVE_FEATHER: 'REVIVE_FEATHER'  // 橢圓
+    INVINCIBLE: 'INVINCIBLE',
+    ENERGY_HOT: 'ENERGY_HOT',
+    REVIVE_FEATHER: 'REVIVE_FEATHER'
 }
+
+BUFF_ICON_3D = {
+    SHIELD: 'SHIELD',      // 盾牌形狀
+    ENERGY: 'ENERGY',      // 閃電形狀
+    REVIVE: 'REVIVE',      // 菱形
+    FEATHER: 'FEATHER'     // 羽毛形狀
+}
+
+// 使用方式
+buffManager3D.addOrRefreshBuff({
+    type: BUFF_TYPE_3D.INVINCIBLE,
+    duration: 5,
+    showIcon: true,
+    iconType: BUFF_ICON_3D.SHIELD,
+    iconColor: '#ffd54f'
+});
+
+buffManager3D.hasBuff(BUFF_TYPE_3D.INVINCIBLE);  // boolean
+buffManager3D.getBuff(BUFF_TYPE_3D.INVINCIBLE);  // buff object or null
+buffManager3D.clearAll();  // 清除所有 buff
 ```
 
 ## 玩家狀態
@@ -241,7 +303,7 @@ energyRegenRate: 15  // 每秒回復
 speed: 8 unit/s
 radius: 0.3
 
-// Buff
+// Buff（由 BuffManager3D 同步）
 isInvincible: false
 invincibleTimer: 0
 hasEnergyBuff: false      // true 時發射火箭不消耗 energy
@@ -250,6 +312,12 @@ hasReviveFeather: false
 
 // 持有道具
 heldItem: null  // ACTIVE 道具
+
+// 死亡狀態機
+isDead: false
+deathState: 'alive'  // 'alive' → 'dying' → 'waiting' → 'reviving' → 'alive'
+deathTimer: 0        // 等待復活的倒數（無羽毛：3秒，有羽毛：0秒）
+reviveTimer: 0       // 復活動畫時間（1秒）
 ```
 
 ### Energy 系統
@@ -259,10 +327,20 @@ heldItem: null  // ACTIVE 道具
 - EnergyDrink buff：發射不消耗 energy
 - Energy 不足時無法發射火箭
 
-### Buff 圖示注意
+### Buff 同步流程
 
-`BuffIcons3D` 和 `Player3D` 的 timer 是**分開獨立**倒數的，沒有統一的 BuffManager3D。
-確保 `buffIcons.addBuff(type, duration)` 的 duration 和 `player3d.xxxTimer` 一致。
+```js
+// main.js update() 中同步 BuffManager3D 狀態到 Player3D
+buffManager3D.update(dt);
+
+const invBuff = buffManager3D.getBuff(BUFF_TYPE_3D.INVINCIBLE);
+player3d.isInvincible = !!invBuff;
+
+const energyBuff = buffManager3D.getBuff(BUFF_TYPE_3D.ENERGY_HOT);
+player3d.hasEnergyBuff = !!energyBuff;
+
+player3d.hasReviveFeather = buffManager3D.hasBuff(BUFF_TYPE_3D.REVIVE_FEATHER);
+```
 
 ## Settings Panel 連動
 
@@ -292,6 +370,24 @@ COLORS_3D = {
     bomb: 0x333333,        // 黑色炸彈
     revive: 0xf5f5f5       // 亮白羽毛
 }
+```
+
+## 火箭系統（Rocket3D）
+
+```js
+// 造型結構（+Z 為飛行方向）
+尖頭(紅) → 身體(軍綠+紅條紋) → 尾翼(4片紅色) → 尾焰
+
+// 多層尾焰
+innerFlame   // 內焰：亮黃色，快速閃爍
+midFlame     // 中焰：橘黃色，脈動
+outerFlame   // 外焰：橘紅色，呼吸
+flameTip     // 火焰尖端：抖動
+flameLight   // 點光源：照亮周圍
+
+// 拖尾煙霧
+smokeInterval: 0.03  // 每 0.03 秒生成一個煙霧粒子
+// SmokeParticle：灰色球體，逐漸擴大並淡出
 ```
 
 ## 重要注意事項

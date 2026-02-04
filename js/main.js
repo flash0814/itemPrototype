@@ -18,9 +18,10 @@ import { MeteorStrike3D } from './items3d/MeteorStrike3D.js';
 import { Bomb3D } from './items3d/Bomb3D.js';
 import { AimingUI3D } from './ui3d/AimingUI3D.js';
 import { EffectsManager3D } from './effects3d/EffectsManager3D.js';
-import { HealthBar3D } from './ui3d/HealthBar3D.js';
-import { EnergyBar3D } from './ui3d/EnergyBar3D.js';
-import { BuffIcons3D, BUFF_TYPE_3D } from './ui3d/BuffIcons3D.js';
+import { DeathEffect3D } from './effects3d/DeathEffect3D.js';
+import { PlayerStatusUI3D } from './ui3d/PlayerStatusUI3D.js';
+import { BuffIcons3D } from './ui3d/BuffIcons3D.js';
+import { buffManager3D, BUFF_TYPE_3D, BUFF_ICON_3D } from './core3d/BuffManager3D.js';
 import { FloatingTextManager3D } from './ui3d/FloatingText3D.js';
 import { InventoryUI3D } from './ui3d/InventoryUI3D.js';
 import * as THREE from 'three';
@@ -39,6 +40,7 @@ let ground3d = null;
 let wall3d = null;
 let player3d = null;
 let effects3d = null;
+let deathEffect = null;
 
 // 遊戲物件陣列
 const rockets = [];
@@ -50,8 +52,7 @@ const items = [];
 
 // UI 系統
 let aimingUI = null;
-let healthBar = null;
-let energyBar = null;
+let playerStatusUI = null;
 let buffIcons = null;
 let floatingTexts = null;
 let inventoryUI = null;
@@ -111,19 +112,50 @@ function init3D() {
 
     // 初始化特效管理器（必須在 createSceneObjects 之前）
     effects3d = new EffectsManager3D(world3d.getScene());
+    deathEffect = new DeathEffect3D(world3d.getScene());
 
     // 設定玩家特效回調
-    player3d.onDeath = (pos) => {
-        effects3d.deathEffect(pos.x, pos.z);
+    player3d.onDeath = (pos, hadFeather) => {
+        // 啟動碎片死亡特效
+        deathEffect.startDeath(pos);
+
+        // 簡單粒子特效（補充）
+        effects3d.damageEffect(pos.x, pos.z, 8);
+
+        // 死亡時清除所有 buff
+        buffManager3D.clearAll();
+
+        // 如果有羽毛，顯示文字
+        if (hadFeather) {
+            floatingTexts.showText(pos, 'FEATHER USED!', 0xffffff);
+        }
+    };
+    player3d.onReviveStart = (pos) => {
+        // 啟動碎片復活特效
+        deathEffect.startRevive(pos);
+
+        // 設定復活完成回調
+        deathEffect.onReviveComplete = () => {
+            // 復活完成（讓 Player3D 顯示）
+        };
     };
     player3d.onRevive = (pos) => {
-        effects3d.reviveEffect(pos.x, pos.z);
         floatingTexts.showText(pos, 'REVIVE!', 0x00ffff);
-        // 復活後加入 2 秒無敵圖示
-        buffIcons.addBuff(BUFF_TYPE_3D.INVINCIBLE, 2, 0x00ffff);
+        // 金色星星特效
+        effects3d.invincibleEffect(pos.x, pos.z);
+        // 復活後加入 3 秒無敵（顯示 REVIVE 菱形 icon）
+        buffManager3D.addOrRefreshBuff({
+            id: 'reviveBlink',
+            type: BUFF_TYPE_3D.INVINCIBLE,
+            duration: 3,
+            showIcon: true,
+            iconType: BUFF_ICON_3D.REVIVE,
+            iconColor: '#00ffff',
+            defendRatio: 0
+        });
     };
     player3d.onFeatherUsed = () => {
-        buffIcons.removeBuff(BUFF_TYPE_3D.REVIVE_FEATHER);
+        buffManager3D.removeBuffByType(BUFF_TYPE_3D.REVIVE_FEATHER);
     };
     player3d.onTakeDamage = (pos, amount) => {
         floatingTexts.showDamage(pos, amount);
@@ -142,8 +174,7 @@ function init3D() {
     aimingUI = new AimingUI3D(world3d.getScene());
 
     // 初始化 UI 系統
-    healthBar = new HealthBar3D(world3d.getScene());
-    energyBar = new EnergyBar3D(world3d.getScene());
+    playerStatusUI = new PlayerStatusUI3D(world3d.getScene());
     buffIcons = new BuffIcons3D(world3d.getScene());
     floatingTexts = new FloatingTextManager3D(world3d.getScene());
     inventoryUI = new InventoryUI3D();
@@ -425,19 +456,41 @@ function spawnItem() {
         case 'InvincibleStar':
             item = new InvincibleStar3D(scene, x, z, { buffDuration: 5, duration: 20 });
             item.onActivate = (duration) => {
-                buffIcons.addBuff(BUFF_TYPE_3D.INVINCIBLE, duration, 0xffd54f);
+                buffManager3D.addOrRefreshBuff({
+                    type: BUFF_TYPE_3D.INVINCIBLE,
+                    duration: duration,
+                    showIcon: true,
+                    iconType: BUFF_ICON_3D.SHIELD,
+                    iconColor: '#ffd54f',
+                    defendRatio: 0
+                });
             };
             break;
         case 'EnergyDrink':
             item = new EnergyDrink3D(scene, x, z, { buffDuration: 10, duration: 20 });
             item.onActivate = (duration) => {
-                buffIcons.addBuff(BUFF_TYPE_3D.ENERGY_BUFF, duration, 0xffb74d);
+                buffManager3D.addOrRefreshBuff({
+                    type: BUFF_TYPE_3D.ENERGY_HOT,
+                    duration: duration,
+                    showIcon: true,
+                    iconType: BUFF_ICON_3D.ENERGY,
+                    iconColor: '#e8c828'
+                });
             };
             break;
         case 'ReviveFeather':
             item = new ReviveFeather3D(scene, x, z, { duration: 20 });
             item.onActivate = () => {
-                buffIcons.addBuff(BUFF_TYPE_3D.REVIVE_FEATHER, 999999, 0xf5f5f5);
+                // 羽毛 buff 一次只能存在 1 個
+                if (buffManager3D.hasBuff(BUFF_TYPE_3D.REVIVE_FEATHER)) return;
+                buffManager3D.addBuff({
+                    id: 'reviveFeather',
+                    type: BUFF_TYPE_3D.REVIVE_FEATHER,
+                    duration: 999999,  // 永久直到死亡消耗
+                    showIcon: true,
+                    iconType: BUFF_ICON_3D.FEATHER,
+                    iconColor: '#ffffff'
+                });
             };
             break;
         case 'MeteorStrike':
@@ -572,7 +625,71 @@ function updateFireTraps(dt) {
 }
 
 function update(dt) {
+    // ===== 死亡狀態處理 =====
+    if (player3d.isDead) {
+        // 退出瞄準模式
+        if (currentMode === GAME_MODE.AIMING) {
+            currentMode = GAME_MODE.NORMAL;
+            aimingUI.hide();
+        }
+
+        // 更新死亡倒數
+        player3d.updateDeath(dt);
+
+        // 更新死亡特效（碎片物理 + 復活動畫）
+        deathEffect.update(dt);
+
+        // 死亡期間仍更新世界物件
+        updateRockets(dt);
+        updateFireTraps(dt);
+        updateItems(dt);
+        effects3d.update(dt);
+
+        // 攝影機仍跟隨
+        const playerPos = player3d.getPosition();
+        camera3d.setTarget(playerPos.x, 0, playerPos.z);
+        camera3d.update(dt);
+
+        // 隱藏 UI
+        playerStatusUI.setVisible(false);
+        buffIcons.setVisible(false);
+
+        floatingTexts.update(dt);
+        inventoryUI.update(null);
+        return;
+    }
+
+    // 如果死亡特效仍在播放（例如復活動畫），繼續更新
+    if (deathEffect.isActive()) {
+        deathEffect.update(dt);
+    }
+
+    // ===== 正常狀態 =====
     processInput(dt);
+
+    // 更新 buff 系統
+    buffManager3D.update(dt);
+
+    // 同步 buff 狀態到 player3d
+    const invBuff = buffManager3D.getBuff(BUFF_TYPE_3D.INVINCIBLE);
+    if (invBuff) {
+        player3d.isInvincible = true;
+        player3d.invincibleTimer = invBuff.duration - invBuff.elapsed;
+    } else {
+        player3d.isInvincible = false;
+        player3d.invincibleTimer = 0;
+    }
+
+    const energyBuff = buffManager3D.getBuff(BUFF_TYPE_3D.ENERGY_HOT);
+    if (energyBuff) {
+        player3d.hasEnergyBuff = true;
+        player3d.energyBuffTimer = energyBuff.duration - energyBuff.elapsed;
+    } else {
+        player3d.hasEnergyBuff = false;
+        player3d.energyBuffTimer = 0;
+    }
+
+    player3d.hasReviveFeather = buffManager3D.hasBuff(BUFF_TYPE_3D.REVIVE_FEATHER);
 
     player3d.update(dt);
 
@@ -603,16 +720,10 @@ function update(dt) {
 
     // 更新 UI
     const cam = camera3d.getCamera();
-    if (!player3d.isDead) {
-        healthBar.update(playerPos, player3d.hp, player3d.maxHp, cam, dt);
-        healthBar.setVisible(true);
-        energyBar.update(playerPos, player3d.energy, player3d.maxEnergy, cam, dt);
-        energyBar.setVisible(true);
-        buffIcons.update(playerPos, cam, dt);
-    } else {
-        healthBar.setVisible(false);
-        energyBar.setVisible(false);
-    }
+    playerStatusUI.update(playerPos, player3d.hp, player3d.maxHp, player3d.energy, player3d.maxEnergy, cam, dt);
+    playerStatusUI.setVisible(true);
+    buffIcons.update(playerPos, cam, dt);
+    buffIcons.setVisible(true);
 
     floatingTexts.update(dt);
     inventoryUI.update(player3d.heldItem);

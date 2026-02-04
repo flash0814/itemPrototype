@@ -40,6 +40,11 @@ export class Player3D {
         this.energyBuffTimer = 0;
         this.hasReviveFeather = false;
 
+        // 死亡/重生狀態
+        this.deathTimer = 0;
+        this.reviveTimer = 0;
+        this.deathState = 'alive';  // 'alive', 'dying', 'waiting', 'reviving'
+
         // 輸入狀態
         this.moveInput = { x: 0, z: 0 };
 
@@ -128,23 +133,8 @@ export class Player3D {
     }
 
     updateBuffs(dt) {
-        // 無敵
-        if (this.isInvincible) {
-            this.invincibleTimer -= dt;
-            if (this.invincibleTimer <= 0) {
-                this.isInvincible = false;
-                this.invincibleTimer = 0;
-            }
-        }
-
-        // 能量 buff
-        if (this.hasEnergyBuff) {
-            this.energyBuffTimer -= dt;
-            if (this.energyBuffTimer <= 0) {
-                this.hasEnergyBuff = false;
-                this.energyBuffTimer = 0;
-            }
-        }
+        // Buff 狀態由 BuffManager3D 管理，這裡不再處理 timer
+        // isInvincible, hasEnergyBuff, hasReviveFeather 由 main.js 從 BuffManager3D 同步
 
         // Energy 自動回復
         if (this.energy < this.maxEnergy) {
@@ -246,42 +236,93 @@ export class Player3D {
      * 死亡
      */
     die() {
-        // 檢查復活羽毛
-        if (this.hasReviveFeather) {
-            this.hasReviveFeather = false;
-            this.hp = this.maxHp * 0.5;  // 復活後 50% HP
-            this.isInvincible = true;
-            this.invincibleTimer = 2;  // 復活無敵 2 秒
-            console.log('Revived by feather!');
-            // 羽毛消耗回調
-            if (this.onFeatherUsed) {
-                this.onFeatherUsed();
-            }
-            // 復活特效回調
-            if (this.onRevive) {
-                this.onRevive(this.position.clone());
-            }
-            return;
-        }
+        // 檢查復活羽毛（羽毛提供快速復活，不是免死）
+        const hadFeather = this.hasReviveFeather;
 
         this.isDead = true;
+        this.deathState = 'dying';
         this.mesh.visible = false;
-        console.log('Player died');
+
+        // 設定重生等待時間
+        if (hadFeather) {
+            this.deathTimer = 0;  // 有羽毛：立即開始重生
+            console.log('Player died (has feather, instant revive)');
+        } else {
+            this.deathTimer = 3;  // 無羽毛：等待 3 秒
+            console.log('Player died (waiting 3s to revive)');
+        }
+
+        // 清除持有道具
+        if (this.heldItem) {
+            this.heldItem.isDead = true;
+            this.heldItem = null;
+        }
+
         // 死亡特效回調
         if (this.onDeath) {
-            this.onDeath(this.position.clone());
+            this.onDeath(this.position.clone(), hadFeather);
         }
     }
 
     /**
-     * 復活
+     * 更新死亡狀態（由 main.js 呼叫）
+     */
+    updateDeath(dt) {
+        if (!this.isDead) return false;
+
+        if (this.deathState === 'dying') {
+            // 死亡動畫播放中（短暫）
+            this.deathState = 'waiting';
+        }
+
+        if (this.deathState === 'waiting') {
+            this.deathTimer -= dt;
+            if (this.deathTimer <= 0) {
+                this.deathState = 'reviving';
+                this.reviveTimer = 1.0;  // 復活動畫時間
+                // 開始重生動畫
+                if (this.onReviveStart) {
+                    this.onReviveStart(this.position.clone());
+                }
+            }
+        }
+
+        if (this.deathState === 'reviving') {
+            // 等待復活動畫完成
+            this.reviveTimer -= dt;
+            if (this.reviveTimer <= 0) {
+                this.completeRevive();
+                return true;  // 重生完成
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 完成重生
+     */
+    completeRevive() {
+        this.isDead = false;
+        this.deathState = 'alive';
+        this.hp = this.maxHp;
+        this.energy = this.maxEnergy;
+        this.mesh.visible = true;
+
+        console.log('Player revived!');
+
+        // 重生特效回調
+        if (this.onRevive) {
+            this.onRevive(this.position.clone());
+        }
+    }
+
+    /**
+     * 強制復活（外部呼叫）
      */
     revive(x = 0, z = 0) {
-        this.isDead = false;
-        this.hp = this.maxHp;
         this.position.set(x, 0, z);
-        this.mesh.visible = true;
-        // TODO: 觸發復活特效
+        this.completeRevive();
     }
 
     /**
