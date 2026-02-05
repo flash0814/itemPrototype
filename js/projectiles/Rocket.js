@@ -27,7 +27,7 @@ export class Rocket extends Projectile {
         const tipY = this.y + Math.sin(this.angle) * (this.width / 2);
 
         for (let obj of gameState.fieldObjects) {
-            if (obj.isSolid && obj.contains(tipX, tipY)) {
+            if (this.collisionMask.has(obj.collisionLayer) && obj.contains(tipX, tipY)) {
                 this.explode();
                 return;
             }

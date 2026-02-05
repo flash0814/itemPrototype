@@ -7,6 +7,7 @@ export class Projectile {
         this.speed = speed;
         this.lifetime = lifetime;
         this.isDead = false;
+        this.collisionMask = new Set([0]);
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
     }

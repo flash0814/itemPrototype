@@ -1,7 +1,6 @@
 import { SETTINGS } from '../core/Settings.js';
 import { gameState, GAME_STATE_MODE } from '../core/GameState.js';
 import { player } from '../entities/Player.js';
-import { checkCollisionWithRect } from '../core/Utils.js';
 import { buffManager } from '../core/BuffManager.js';
 
 // 繪製 Buff 圖標
@@ -440,14 +439,6 @@ function getAimRadius() {
 export function drawAimingUI(ctx, input) {
     const aimPos = getClampedAimPosition(input);
 
-    let isColliding = false;
-    for (let obj of gameState.fieldObjects) {
-        if (obj.isSolid && checkCollisionWithRect(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, obj)) {
-            isColliding = true;
-            break;
-        }
-    }
-
     // 連線
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.beginPath();
@@ -456,7 +447,7 @@ export function drawAimingUI(ctx, input) {
     ctx.stroke();
 
     // 瞄準點
-    ctx.fillStyle = isColliding ? SETTINGS.colors.aimInvalid : SETTINGS.colors.aimValid;
+    ctx.fillStyle = SETTINGS.colors.aimValid;
     ctx.beginPath();
     ctx.arc(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, 0, Math.PI * 2);
     ctx.fill();
@@ -476,11 +467,18 @@ export function getClampedAimPosition(input) {
     let finalX = input.mouse.x;
     let finalY = input.mouse.y;
 
+    // 限制在 maxAimRadius 內
     if (dist > aimRadius) {
         const ratio = aimRadius / dist;
         finalX = player.x + dx * ratio;
         finalY = player.y + dy * ratio;
     }
+
+    // 限制在 edgeWall 內側（圓心不超出牆壁內邊界）
+    const wallT = SETTINGS.worldConfig.wallThickness;
+    const world = gameState.world;
+    finalX = Math.max(wallT, Math.min(world.width - wallT, finalX));
+    finalY = Math.max(wallT, Math.min(world.height - wallT, finalY));
 
     return { x: finalX, y: finalY };
 }

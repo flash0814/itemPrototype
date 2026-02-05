@@ -13,6 +13,7 @@ export class FieldObject {
         this.id = generateId(typeName);
 
         this.isSolid = false;
+        this.collisionLayer = 0;
         this.damage = 0;
         this.isDragging = false;
         this.isValidPlacement = true;

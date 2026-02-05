@@ -1,5 +1,6 @@
 import { SETTINGS } from '../core/Settings.js';
 import { gameState } from '../core/GameState.js';
+import { checkCollisionWithRect } from '../core/Utils.js';
 import { ItemBase } from './ItemBase.js';
 import { player, takeDamage } from '../entities/Player.js';
 import { Particle } from '../effects/Particle.js';
@@ -10,6 +11,7 @@ export class Bomb extends ItemBase {
         super(x, y, SETTINGS.itemBomb.duration);
         this.category = 'ACTIVE';
         this.maxAimRadius = SETTINGS.itemBomb.maxAimRadius;
+        this.collisionMask = new Set([0]);
         this.size = 16;
         this.fuseTimer = 0;
     }
@@ -54,6 +56,17 @@ export class Bomb extends ItemBase {
             this.z -= this.vz * dt;
             this.x += this.vx * dt;
             this.y += this.vy * dt;
+
+            // 飛行中碰撞檢測
+            for (let obj of gameState.fieldObjects) {
+                if (this.collisionMask.has(obj.collisionLayer) &&
+                    checkCollisionWithRect(this.x, this.y, 8, obj)) {
+                    this.y -= this.z;
+                    this.z = 0;
+                    this.explode();
+                    return;
+                }
+            }
 
             // 引線火花
             this.fuseTimer += dt;

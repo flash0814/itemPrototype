@@ -194,17 +194,6 @@ function tryThrowItem() {
     if (!player.heldItem) return;
 
     const aimPos = getClampedAimPosition(input);
-
-    let hitSolid = false;
-    for (let obj of gameState.fieldObjects) {
-        if (obj.isSolid && checkCollisionWithRect(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, obj)) {
-            hitSolid = true;
-            break;
-        }
-    }
-
-    if (hitSolid) return;
-
     const item = player.heldItem;
     player.heldItem = null;
     item.isHeld = false;

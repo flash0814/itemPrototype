@@ -60,6 +60,14 @@ js/
 - **道具不從 activeItems 移除**：撿起時只設 `isHeld=true`，仍留在 `gameState.activeItems` 陣列中。draw/pickup 邏輯透過 flag 跳過。丟出時也不需 push 回去。
 - **Camera/Viewport 分離**：世界（world）為固定尺寸，畫布（viewport）隨瀏覽器視窗大小調整。攝影機跟隨玩家並夾在世界邊界內。所有遊戲物件在世界空間繪製，HUD 在螢幕空間繪製。
 
+## Collision System
+
+- **Collision Layer**（障礙物側）：`FieldObject` base class 定義 `collisionLayer: number`（預設 0），所有 subclass（EdgeWall、Obstacle、FireTrap）繼承
+- **Collision Mask**（Entity 側）：`Projectile` base class 和 `Bomb` 各自定義 `collisionMask: Set<number>`（預設 `{0}`）
+- **判定**：`collisionMask.has(obj.collisionLayer)` → 觸發碰撞
+- **Detection**：Rocket 用尖端點判定（`obj.contains`），Bomb 用圓形判定（`checkCollisionWithRect`）
+- 預留 layer 1, 2... 給未來可穿透的障礙物
+
 ## Camera / Viewport 系統
 
 ### 概念
@@ -265,8 +273,8 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 2. **地上狀態** → duration 倒數（0=永久）
 3. **PASSIVE 撿起** → `onPassiveEffect()` → isDead
 4. **ACTIVE 撿起** → `isHeld=true`, 存入 `player.heldItem`
-5. **F 鍵** → 瞄準模式（maxAimRadius 限制瞄準距離，不顯示圈圈）
-6. **左鍵丟出** → `activate()`, 從 z=150 落下，落地後開始效果
+5. **F 鍵** → 瞄準模式（maxAimRadius 限制瞄準距離，不顯示圈圈；準心不超出 edgeWall 內側）
+6. **左鍵丟出** → `activate()`，可丟在任何位置（含 obstacle 上），不做碰撞阻擋
 7. **效果結束** → isDead
 
 ### HealBox 雙狀態
@@ -281,7 +289,7 @@ Bomb 是唯一從玩家位置飛到目標的 ACTIVE 道具（其他 ACTIVE 瞬�
 - `tryThrowItem()` 中 `instanceof Bomb` 特殊分支，不設 `item.x/y` 到目標
 - `activate(targetX, targetY)` 計算水平速度（`throwSpeed`）和初始 `vz`
 - `vz` 根據飛行時間反算，讓炸彈自動落在目標點（距離近弧低，距離遠弧高）
-- 飛行中 gravity=800，落地觸發 `explode()`
+- 飛行中 gravity=800，碰撞障礙物或落地時觸發 `explode()`
 - 爆炸效果同 Rocket 但紅色（`bombExplosion` 粒子 + 紅色 `ExplosionWave`）
 - 傷害判定同 MeteorStrike（含自傷 + 場景物件）
 - `ExplosionWave` 支援可選顏色參數（向後相容，預設仍為 rocket 橘色）
