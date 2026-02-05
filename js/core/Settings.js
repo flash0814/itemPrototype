@@ -86,7 +86,7 @@ export const SETTINGS = {
 
     itemMeteorStrike: {
         duration: 0,
-        maxAimRadius: 650,
+        maxAimRadius: 2000,
         damage: 200,
         radius: 250,
         meteorSpeed: 800,
@@ -122,6 +122,10 @@ export const SETTINGS = {
         initialZoom: 1.0,
         zoomMin: 0.3,
         zoomMax: 3.0,
-        zoomStep: 0.1
+        zoomStep: 0.1,
+        camToAimEdgeThreshold: 0.3,  // 螢幕邊緣多少比例開始移動攝影機（0.3 = 外側 30%）
+        camToAimLerpSpeed: 5,        // 攝影機追蹤準心的 lerp 速度
+        camBackPlayerDelay: 1.2,     // 丟出道具後延遲幾秒才開始回歸玩家
+        camBackPlayerTime: 1.0       // 攝影機回歸玩家的 tween 時間
     }
 };

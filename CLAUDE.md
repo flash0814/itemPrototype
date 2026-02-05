@@ -90,14 +90,19 @@ SETTINGS.cameraConfig = {
     initialZoom: 1.0,
     zoomMin: 0.3,      // 手動滾輪最遠
     zoomMax: 3.0,      // 最近
-    zoomStep: 0.1      // 每次滾輪的線性步進量
+    zoomStep: 0.1,     // 每次滾輪的線性步進量
+    camToAimEdgeThreshold: 0.3,  // 螢幕外側多少比例觸發攝影機追蹤
+    camToAimLerpSpeed: 5,        // 追蹤準心的 lerp 速度
+    camBackPlayerDelay: 1.2,     // 丟出後延遲回歸（秒）
+    camBackPlayerTime: 1.0       // 回歸 tween 時間（秒）
 }
 ```
 
 ### 狀態（GameState）
 
 - `gameState.world` — `{ width, height }` 世界尺寸
-- `gameState.camera` — `{ x, y, zoom, targetZoom }` 攝影機中心位置與縮放
+- `gameState.camera` — `{ x, y, zoom, targetZoom, aimFollow }` 攝影機中心位置、縮放、準心追蹤狀態
+- `gameState.camera.aimFollow` — `{ state, weight, returnDelay, returnTimer, returnDuration, returnFromX, returnFromY }`
 - `input.mouse.screenX/screenY` — 螢幕座標（用於 HUD 互動）
 - `input.mouse.x/y` — 世界座標（透過 `screenToWorld()` 自動轉換）
 
@@ -111,6 +116,9 @@ SETTINGS.cameraConfig = {
 | `screenToWorld(sx, sy)` | 螢幕座標 → 世界座標 |
 | `applyZoom(delta)` | 滾輪縮放（線性步進），delta>0 縮小 / delta<0 放大 |
 | `updateZoom(dt)` | 每幀 lerp 追趕 targetZoom |
+| `getAimFollowTarget(dt, pX, pY, aX, aY)` | 根據 aimFollow 狀態計算攝影機目標位置 |
+| `startAimFollow()` | 進入 FOLLOW_AIM 狀態（enterAimMode 時呼叫） |
+| `startCameraReturn(hasDelay)` | 開始回歸玩家（true=丟出有延遲，false=取消無延遲） |
 
 ### 繪製順序
 
@@ -138,6 +146,21 @@ draw():
 - 線性步進：`targetZoom ± zoomStep`（def 0.1），`Math.round` 確保精確小數 2 位
 - `cam.zoom` 每幀 lerp 追趕 `targetZoom`，產生平滑過渡
 - 範圍限制：`zoomMin` (0.3) ~ `zoomMax` (3.0)
+
+### Aim Follow 攝影機追蹤準心
+
+大範圍瞄準時（maxAimRadius 大），準心接近螢幕邊緣時攝影機自動從玩家過渡到準心位置。
+
+**三種狀態**（`gameState.camera.aimFollow.state`）：
+- `FOLLOW_PLAYER` — 預設，攝影機跟隨玩家
+- `FOLLOW_AIM` — 瞄準中，根據準心離螢幕邊緣的距離動態計算混合權重
+- `RETURNING` — 離開瞄準後，延遲 + ease-out quad tween 回歸玩家
+
+**Player → Aimpoint（進入）**：安全區域 = 螢幕半寬 × (1 - threshold)，準心超出安全區域時 weight 增加，攝影機偏向準心方向。weight 用 `camToAimLerpSpeed` 平滑過渡。
+
+**Aimpoint → Player（回程）**：丟出道具後等待 `camBackPlayerDelay`，再以 `camBackPlayerTime` 的 ease-out quad 從當時攝影機位置 tween 回玩家。取消瞄準（hold 不足）時無延遲直接回歸。
+
+**Aiming 中 pointer-events**：瞄準模式下 `#settings-panel` 設為 `pointer-events: none`，防止游標移到 panel 上導致 canvas mousemove 停止觸發。離開瞄準後還原。
 
 ### 瀏覽器 resize
 
@@ -289,7 +312,7 @@ Bomb 是唯一從玩家位置飛到目標的 ACTIVE 道具（其他 ACTIVE 瞬�
 - `tryThrowItem()` 中 `instanceof Bomb` 特殊分支，不設 `item.x/y` 到目標
 - `activate(targetX, targetY)` 計算水平速度（`throwSpeed`）和初始 `vz`
 - `vz` 根據飛行時間反算，讓炸彈自動落在目標點（距離近弧低，距離遠弧高）
-- 飛行中 gravity=800，碰撞障礙物或落地時觸發 `explode()`
+- 飛行中 gravity=400，碰撞障礙物或落地時觸發 `explode()`
 - 爆炸效果同 Rocket 但紅色（`bombExplosion` 粒子 + 紅色 `ExplosionWave`）
 - 傷害判定同 MeteorStrike（含自傷 + 場景物件）
 - `ExplosionWave` 支援可選顏色參數（向後相容，預設仍為 rocket 橘色）

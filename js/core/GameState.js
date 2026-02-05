@@ -17,7 +17,16 @@ export const gameState = {
 
     // 攝影機
     camera: {
-        x: 0, y: 0, zoom: 1.0, targetZoom: 1.0
+        x: 0, y: 0, zoom: 1.0, targetZoom: 1.0,
+        aimFollow: {
+            state: 'FOLLOW_PLAYER',  // 'FOLLOW_PLAYER' | 'FOLLOW_AIM' | 'RETURNING'
+            weight: 0,               // 混合權重（0=玩家, 1=準心）
+            returnDelay: 0,          // 回歸延遲倒數
+            returnTimer: 0,          // 回歸已過時間
+            returnDuration: 0,       // 回歸總時間
+            returnFromX: 0,          // 回歸起點 X
+            returnFromY: 0           // 回歸起點 Y
+        }
     },
 
     // 遊戲物件集合

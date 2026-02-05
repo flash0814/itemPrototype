@@ -25,10 +25,10 @@ import {
     drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
-import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom } from './Camera.js';
+import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom, getAimFollowTarget, startAimFollow, startCameraReturn } from './Camera.js';
 
 let canvas, ctx, container;
-let debugInfoElement, aimStatusElement;
+let debugInfoElement, aimStatusElement, settingsPanelElement;
 let lastTime = 0;
 let aimStartTime = 0;
 
@@ -38,6 +38,7 @@ export function initGame() {
     container = document.getElementById('game-container');
     debugInfoElement = document.getElementById('debug-info');
     aimStatusElement = document.getElementById('aim-status');
+    settingsPanelElement = document.getElementById('settings-panel');
 
     // 初始化 UI
     initSettingsPanel();
@@ -182,6 +183,8 @@ function exitAimMode() {
     if (gameState.currentMode !== GAME_STATE_MODE.AIMING) return;
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
+    settingsPanelElement.style.pointerEvents = '';
+    startCameraReturn(false);
 }
 
 function enterAimMode() {
@@ -189,8 +192,10 @@ function enterAimMode() {
     if (!player.heldItem) return;
     gameState.currentMode = GAME_STATE_MODE.AIMING;
     aimStatusElement.style.display = 'block';
+    settingsPanelElement.style.pointerEvents = 'none';
     aimStartTime = performance.now() / 1000;
     input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
+    startAimFollow();
 }
 
 function tryThrowItem() {
@@ -214,6 +219,8 @@ function tryThrowItem() {
 
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
+    settingsPanelElement.style.pointerEvents = '';
+    startCameraReturn(true);
 }
 
 function spawnItem() {
@@ -388,7 +395,8 @@ function update(deltaTime) {
         gameState.particles.forEach(p => p.update(deltaTime));
         gameState.particles = gameState.particles.filter(p => p.life > 0);
         updateZoom(deltaTime);
-        updateCamera(player.x, player.y);
+        const deathCamTarget = getAimFollowTarget(deltaTime, player.x, player.y, player.x, player.y);
+        updateCamera(deathCamTarget.x, deathCamTarget.y);
         updateDebugInfo();
         return;
     }
@@ -541,7 +549,11 @@ function update(deltaTime) {
 
     // 更新攝影機
     updateZoom(deltaTime);
-    updateCamera(player.x, player.y);
+    const aimPos = (gameState.currentMode === GAME_STATE_MODE.AIMING)
+        ? getClampedAimPosition(input)
+        : { x: player.x, y: player.y };
+    const camTarget = getAimFollowTarget(deltaTime, player.x, player.y, aimPos.x, aimPos.y);
+    updateCamera(camTarget.x, camTarget.y);
 }
 
 function draw() {
