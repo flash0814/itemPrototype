@@ -265,7 +265,7 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 | 類型 | 行為 | 範例 |
 |------|------|------|
 | PASSIVE | 走近自動觸發，立即消失 | HealPack, InvincibleStar |
-| ACTIVE | 撿起持有 → F 進瞄準 → 左鍵丟出啟動 | HealBox |
+| ACTIVE | 撿起持有 → Hold F 瞄準 → 放開 F 丟出啟動 | HealBox |
 
 ### 道具生命週期
 
@@ -273,8 +273,8 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 2. **地上狀態** → duration 倒數（0=永久）
 3. **PASSIVE 撿起** → `onPassiveEffect()` → isDead
 4. **ACTIVE 撿起** → `isHeld=true`, 存入 `player.heldItem`
-5. **F 鍵** → 瞄準模式（maxAimRadius 限制瞄準距離，不顯示圈圈；準心不超出 edgeWall 內側）
-6. **左鍵丟出** → `activate()`，可丟在任何位置（含 obstacle 上），不做碰撞阻擋
+5. **Hold F** → 瞄準模式（maxAimRadius 限制瞄準距離，不顯示圈圈；準心不超出 edgeWall 內側）
+6. **放開 F** → `activate()` 丟出，可丟在任何位置（含 obstacle 上）；Hold 不足 `useItemHoldDelay`（def 0.2s）則取消不丟
 7. **效果結束** → isDead
 
 ### HealBox 雙狀態

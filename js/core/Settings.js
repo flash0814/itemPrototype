@@ -6,6 +6,7 @@ export const SETTINGS = {
     playerSize: 24,
     gridSize: 50,
     aimIndicatorRadius: 8,
+    useItemHoldDelay: 0.2,
 
     colors: {
         bg: '#16161a',

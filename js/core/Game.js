@@ -30,6 +30,7 @@ import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWor
 let canvas, ctx, container;
 let debugInfoElement, aimStatusElement;
 let lastTime = 0;
+let aimStartTime = 0;
 
 export function initGame() {
     canvas = document.getElementById('gameCanvas');
@@ -49,13 +50,21 @@ export function initGame() {
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
         if (player.isDead) return;
-        if (key === 'f') toggleAimMode();
+        if (key === 'f') enterAimMode();
         if (key === 'r') spawnItem();
         if (input.keys.hasOwnProperty(key)) input.keys[key] = true;
     });
 
     window.addEventListener('keyup', (e) => {
         const key = e.key.toLowerCase();
+        if (key === 'f' && gameState.currentMode === GAME_STATE_MODE.AIMING) {
+            const holdTime = performance.now() / 1000 - aimStartTime;
+            if (holdTime >= SETTINGS.useItemHoldDelay) {
+                tryThrowItem();
+            } else {
+                exitAimMode();
+            }
+        }
         if (input.keys.hasOwnProperty(key)) input.keys[key] = false;
     });
 
@@ -82,9 +91,7 @@ export function initGame() {
     canvas.addEventListener('mousedown', (e) => {
         if (e.button === 0) { // 左鍵
             if (player.isDead) return;
-            if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
-                tryThrowItem();
-            } else if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
+            if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
                 if (consumeEnergy(SETTINGS.attackRocket.energyCost)) {
                     fireRocket(player.x, player.y, input.mouse.x, input.mouse.y);
                 }
@@ -177,17 +184,13 @@ function exitAimMode() {
     aimStatusElement.style.display = 'none';
 }
 
-function toggleAimMode() {
-    if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
-        // 沒有持有 active 道具就不進入瞄準
-        if (!player.heldItem) return;
-        gameState.currentMode = GAME_STATE_MODE.AIMING;
-        aimStatusElement.style.display = 'block';
-        input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
-    } else {
-        gameState.currentMode = GAME_STATE_MODE.ROAMING;
-        aimStatusElement.style.display = 'none';
-    }
+function enterAimMode() {
+    if (gameState.currentMode !== GAME_STATE_MODE.ROAMING) return;
+    if (!player.heldItem) return;
+    gameState.currentMode = GAME_STATE_MODE.AIMING;
+    aimStatusElement.style.display = 'block';
+    aimStartTime = performance.now() / 1000;
+    input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
 }
 
 function tryThrowItem() {
