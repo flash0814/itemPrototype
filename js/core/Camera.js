@@ -1,5 +1,5 @@
 import { SETTINGS } from './Settings.js';
-import { gameState } from './GameState.js';
+import { gameState, input } from './GameState.js';
 
 /**
  * 更新攝影機位置（跟隨目標，夾在世界邊界內）
@@ -34,7 +34,6 @@ export function applyCameraTransform(ctx) {
     const cam = gameState.camera;
     const zoom = cam.zoom;
     ctx.save();
-    // 先移到畫布中心，再縮放，再偏移攝影機位置
     ctx.translate(gameState.width / 2, gameState.height / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-cam.x, -cam.y);
@@ -78,6 +77,34 @@ export function updateZoom(dt) {
 }
 
 /**
+ * 計算 Edge Pan 速度（MOUSE aiming 用）
+ * 螢幕邊緣 margin 範圍內：線性 ramp 0 → maxSpeed
+ * 除以 zoom 保持螢幕空間速度一致
+ */
+function getEdgePanVelocity() {
+    const cfg = SETTINGS.cameraConfig;
+    const margin = cfg.edgePanMargin;
+    const maxSpeed = cfg.edgePanMaxSpeed;
+    const w = gameState.width;
+    const h = gameState.height;
+    const sx = input.mouse.screenX;
+    const sy = input.mouse.screenY;
+    const zoom = gameState.camera.zoom;
+
+    let vx = 0, vy = 0;
+    const edgeW = w * margin;
+    const edgeH = h * margin;
+
+    if (sx < edgeW)          vx = -maxSpeed * (1 - sx / edgeW) / zoom;
+    else if (sx > w - edgeW) vx =  maxSpeed * ((sx - (w - edgeW)) / edgeW) / zoom;
+
+    if (sy < edgeH)          vy = -maxSpeed * (1 - sy / edgeH) / zoom;
+    else if (sy > h - edgeH) vy =  maxSpeed * ((sy - (h - edgeH)) / edgeH) / zoom;
+
+    return { x: vx, y: vy };
+}
+
+/**
  * 根據 aimFollow 狀態計算攝影機目標位置
  * @returns {{ x: number, y: number }}
  */
@@ -92,33 +119,20 @@ export function getAimFollowTarget(dt, playerX, playerY, aimX, aimY) {
     }
 
     if (af.state === 'FOLLOW_AIM') {
-        // 計算準心離螢幕邊緣的權重
-        const zoom = cam.zoom;
-        const viewW = gameState.width / zoom;
-        const viewH = gameState.height / zoom;
-
-        const dx = aimX - playerX;
-        const dy = aimY - playerY;
-        const absDx = Math.abs(dx);
-        const absDy = Math.abs(dy);
-
-        // 安全區域 = 螢幕半寬 × (1 - threshold)
-        const safeX = (viewW / 2) * (1 - cfg.camToAimEdgeThreshold);
-        const safeY = (viewH / 2) * (1 - cfg.camToAimEdgeThreshold);
-
-        // 超出安全區域時計算需要的偏移權重
-        const weightX = absDx > 0 ? Math.max(0, 1 - safeX / absDx) : 0;
-        const weightY = absDy > 0 ? Math.max(0, 1 - safeY / absDy) : 0;
-        const targetWeight = Math.max(weightX, weightY);
-
-        // 平滑過渡
-        const lerpSpeed = 1 - Math.exp(-cfg.camToAimLerpSpeed * dt);
-        af.weight += (targetWeight - af.weight) * lerpSpeed;
-
-        return {
-            x: playerX + (aimX - playerX) * af.weight,
-            y: playerY + (aimY - playerY) * af.weight
-        };
+        if (gameState.aimInputMode === 'MOUSE') {
+            // Edge Pan: 累積 offset
+            const ep = cam.edgePan;
+            const panVel = getEdgePanVelocity();
+            ep.offsetX += panVel.x * dt;
+            ep.offsetY += panVel.y * dt;
+            return { x: playerX + ep.offsetX, y: playerY + ep.offsetY };
+        } else {
+            // PAD: camera lerp 追蹤 aimpoint
+            const lerpSpeed = 1 - Math.exp(-cfg.padCamLerpSpeed * dt);
+            af.padCamX += (aimX - af.padCamX) * lerpSpeed;
+            af.padCamY += (aimY - af.padCamY) * lerpSpeed;
+            return { x: af.padCamX, y: af.padCamY };
+        }
     }
 
     if (af.state === 'RETURNING') {
@@ -175,4 +189,16 @@ export function startCameraReturn(hasDelay) {
     af.returnDelay = hasDelay ? cfg.camBackPlayerDelay : 0;
     af.returnTimer = 0;
     af.returnDuration = cfg.camBackPlayerTime;
+}
+
+/**
+ * 重置瞄準攝影機狀態（離開 aiming 時呼叫）
+ */
+export function resetAimCameraState() {
+    const cam = gameState.camera;
+    cam.edgePan.offsetX = 0;
+    cam.edgePan.offsetY = 0;
+    gameState.padAim.x = 0;
+    gameState.padAim.y = 0;
+    gameState.padAim.moveHoldTime = 0;
 }

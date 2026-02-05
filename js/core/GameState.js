@@ -15,12 +15,19 @@ export const gameState = {
     // 世界尺寸
     world: { width: 2500, height: 2500 },
 
+    // 瞄準輸入模式
+    aimInputMode: 'MOUSE',  // 'MOUSE' | 'PAD'
+    padAim: { x: 0, y: 0, moveHoldTime: 0 },
+
     // 攝影機
     camera: {
         x: 0, y: 0, zoom: 1.0, targetZoom: 1.0,
+        edgePan: { offsetX: 0, offsetY: 0 },
         aimFollow: {
             state: 'FOLLOW_PLAYER',  // 'FOLLOW_PLAYER' | 'FOLLOW_AIM' | 'RETURNING'
             weight: 0,               // 混合權重（0=玩家, 1=準心）
+            padCamX: 0,              // PAD mode 攝影機追蹤位置
+            padCamY: 0,
             returnDelay: 0,          // 回歸延遲倒數
             returnTimer: 0,          // 回歸已過時間
             returnDuration: 0,       // 回歸總時間

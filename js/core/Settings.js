@@ -110,8 +110,8 @@ export const SETTINGS = {
     },
 
     worldConfig: {
-        width: 2200,
-        height: 1600,
+        width: 3400,
+        height: 2000,
         wallThickness: 200,
         playerStart: { x: 500, y: 500 },
         obstacles: [{ x: 600, y: 600, size: 200 }],
@@ -123,8 +123,18 @@ export const SETTINGS = {
         zoomMin: 0.3,
         zoomMax: 3.0,
         zoomStep: 0.1,
-        camToAimEdgeThreshold: 0.3,  // 螢幕邊緣多少比例開始移動攝影機（0.3 = 外側 30%）
-        camToAimLerpSpeed: 5,        // 攝影機追蹤準心的 lerp 速度
+        // Edge Pan (Mouse aim)
+        edgePanMargin: 0.12,         // 螢幕外 12% 觸發捲動
+        edgePanMaxSpeed: 600,        // 最大捲動速度 (world px/s, ÷zoom)
+
+        // PAD Aim (WASD aim)
+        padAimBaseSpeed: 200,        // 初始瞄準移動速度 (px/s)
+        padAimMaxSpeed: 1000,        // 加速後最大速度
+        padAimAccelDelay: 0.3,       // 按住多久開始加速 (s)
+        padAimAccelTime: 0.8,        // 加速到 max 的時間 (s)
+        padCamLerpSpeed: 8,          // camera 追蹤 aimpoint 的 lerp 速度
+
+        // 回歸 (共用)
         camBackPlayerDelay: 1.2,     // 丟出道具後延遲幾秒才開始回歸玩家
         camBackPlayerTime: 1.0       // 攝影機回歸玩家的 tween 時間
     }

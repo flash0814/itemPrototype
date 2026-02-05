@@ -505,12 +505,16 @@ export function drawAimingUI(ctx, input) {
 // 取得限制在範圍內的瞄準位置
 export function getClampedAimPosition(input) {
     const aimRadius = getAimRadius();
-    const dx = input.mouse.x - player.x;
-    const dy = input.mouse.y - player.y;
+    const isPad = gameState.aimInputMode === 'PAD';
+    const rawX = isPad ? gameState.padAim.x : input.mouse.x;
+    const rawY = isPad ? gameState.padAim.y : input.mouse.y;
+
+    const dx = rawX - player.x;
+    const dy = rawY - player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    let finalX = input.mouse.x;
-    let finalY = input.mouse.y;
+    let finalX = rawX;
+    let finalY = rawY;
 
     // 限制在 maxAimRadius 內
     if (dist > aimRadius) {
@@ -524,6 +528,12 @@ export function getClampedAimPosition(input) {
     const world = gameState.world;
     finalX = Math.max(wallT, Math.min(world.width - wallT, finalX));
     finalY = Math.max(wallT, Math.min(world.height - wallT, finalY));
+
+    // PAD mode: 寫回 clamped 值防止累積超出
+    if (isPad) {
+        gameState.padAim.x = finalX;
+        gameState.padAim.y = finalY;
+    }
 
     return { x: finalX, y: finalY };
 }

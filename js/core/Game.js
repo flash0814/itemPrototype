@@ -26,7 +26,7 @@ import {
     drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
-import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom, getAimFollowTarget, startAimFollow, startCameraReturn } from './Camera.js';
+import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom, getAimFollowTarget, startAimFollow, startCameraReturn, resetAimCameraState } from './Camera.js';
 
 let canvas, ctx, container;
 let debugInfoElement, aimStatusElement, settingsPanelElement;
@@ -98,9 +98,13 @@ export function initGame() {
                     fireRocket(player.x, player.y, input.mouse.x, input.mouse.y);
                 }
             }
-        } else if (e.button === 1) { // 中鍵 (拖曳/複製)
+        } else if (e.button === 1) { // 中鍵
             e.preventDefault();
-            handleMiddleClick(e);
+            if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
+                toggleAimInputMode();
+            } else {
+                handleMiddleClick(e);
+            }
         }
     });
 
@@ -190,6 +194,9 @@ function exitAimMode() {
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
     settingsPanelElement.style.pointerEvents = '';
+    gameState.aimInputMode = 'MOUSE';
+    canvas.style.cursor = 'crosshair';
+    resetAimCameraState();
     startCameraReturn(false);
 }
 
@@ -201,7 +208,41 @@ function enterAimMode() {
     settingsPanelElement.style.pointerEvents = 'none';
     aimStartTime = performance.now() / 1000;
     input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
+    // 始終以 MOUSE 模式進入
+    gameState.aimInputMode = 'MOUSE';
+    gameState.camera.edgePan.offsetX = 0;
+    gameState.camera.edgePan.offsetY = 0;
     startAimFollow();
+}
+
+function toggleAimInputMode() {
+    if (gameState.aimInputMode === 'MOUSE') {
+        // MOUSE → PAD
+        gameState.aimInputMode = 'PAD';
+        const aimPos = getClampedAimPosition(input);
+        gameState.padAim.x = aimPos.x;
+        gameState.padAim.y = aimPos.y;
+        gameState.padAim.moveHoldTime = 0;
+        // padCam 從當前攝影機位置開始（避免跳動）
+        const af = gameState.camera.aimFollow;
+        af.padCamX = gameState.camera.x;
+        af.padCamY = gameState.camera.y;
+        canvas.style.cursor = 'none';
+    } else {
+        // PAD → MOUSE
+        gameState.aimInputMode = 'MOUSE';
+        // 保持攝影機位移（避免跳動）
+        gameState.camera.edgePan.offsetX = gameState.camera.x - player.x;
+        gameState.camera.edgePan.offsetY = gameState.camera.y - player.y;
+        canvas.style.cursor = 'crosshair';
+    }
+}
+
+function getPadAimSpeed(holdTime) {
+    const cfg = SETTINGS.cameraConfig;
+    if (holdTime <= cfg.padAimAccelDelay) return cfg.padAimBaseSpeed;
+    const t = Math.min(1, (holdTime - cfg.padAimAccelDelay) / cfg.padAimAccelTime);
+    return cfg.padAimBaseSpeed + (cfg.padAimMaxSpeed - cfg.padAimBaseSpeed) * t;
 }
 
 function tryThrowItem() {
@@ -226,6 +267,9 @@ function tryThrowItem() {
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
     settingsPanelElement.style.pointerEvents = '';
+    gameState.aimInputMode = 'MOUSE';
+    canvas.style.cursor = 'crosshair';
+    resetAimCameraState();
     startCameraReturn(true);
 }
 
@@ -499,6 +543,33 @@ function update(deltaTime) {
         player.currentAngle = lerpAngle(player.currentAngle, player.targetAngle, t);
 
     } else if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
+        // PAD mode: WASD 移動虛擬瞄準點
+        if (gameState.aimInputMode === 'PAD') {
+            let adx = 0, ady = 0;
+            if (input.keys.w) ady -= 1;
+            if (input.keys.s) ady += 1;
+            if (input.keys.a) adx -= 1;
+            if (input.keys.d) adx += 1;
+
+            if (adx !== 0 || ady !== 0) {
+                const len = Math.sqrt(adx * adx + ady * ady);
+                adx /= len; ady /= len;
+                gameState.padAim.moveHoldTime += deltaTime;
+                const speed = getPadAimSpeed(gameState.padAim.moveHoldTime);
+                gameState.padAim.x += adx * speed * deltaTime;
+                gameState.padAim.y += ady * speed * deltaTime;
+            } else {
+                gameState.padAim.moveHoldTime = 0;
+            }
+        }
+
+        // MOUSE mode: 每幀重算 world coords（camera 捲動時需更新）
+        if (gameState.aimInputMode === 'MOUSE') {
+            const world = screenToWorld(input.mouse.screenX, input.mouse.screenY);
+            input.mouse.x = world.x;
+            input.mouse.y = world.y;
+        }
+
         const aimPos = getClampedAimPosition(input);
         const dx = aimPos.x - player.x;
         const dy = aimPos.y - player.y;

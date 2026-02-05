@@ -93,7 +93,7 @@ js/
 
 ### 概念
 
-- **World**：固定尺寸的遊戲世界（預設 2500x2500），origin (0,0) 在左上角
+- **World**：固定尺寸的遊戲世界（預設 3400x2000，內部可用 3000x1600），origin (0,0) 在左上角
 - **Viewport**：畫布滿版填滿瀏覽器（無 margin、無固定比例），作為觀看世界的「窗口」
 - **Camera**：中心跟隨玩家，夾在世界邊界內，避免看到世界外
 
@@ -101,31 +101,46 @@ js/
 
 ```js
 SETTINGS.worldConfig = {
-    width: 2500, height: 2500,
-    playerStart: { x: 300, y: 300 },
-    obstacles: [{ x: 400, y: 400, size: 200 }],
-    fireTraps: [{ x: 80, y: 80 }]
+    width: 3400, height: 2000,
+    wallThickness: 200,
+    playerStart: { x: 500, y: 500 },
+    obstacles: [{ x: 600, y: 600, size: 200 }],
+    fireTraps: [{ x: 300, y: 300 }]
 }
 
 SETTINGS.cameraConfig = {
     initialZoom: 1.0,
-    zoomMin: 0.3,      // 手動滾輪最遠
-    zoomMax: 3.0,      // 最近
-    zoomStep: 0.1,     // 每次滾輪的線性步進量
-    camToAimEdgeThreshold: 0.3,  // 螢幕外側多少比例觸發攝影機追蹤
-    camToAimLerpSpeed: 5,        // 追蹤準心的 lerp 速度
-    camBackPlayerDelay: 1.2,     // 丟出後延遲回歸（秒）
-    camBackPlayerTime: 1.0       // 回歸 tween 時間（秒）
+    zoomMin: 0.3,           // 手動滾輪最遠
+    zoomMax: 3.0,           // 最近
+    zoomStep: 0.1,          // 每次滾輪的線性步進量
+
+    // Edge Pan (Mouse aim)
+    edgePanMargin: 0.12,    // 螢幕外 12% 觸發捲動
+    edgePanMaxSpeed: 600,   // 最大捲動速度 (world px/s, ÷zoom)
+
+    // PAD Aim (WASD aim)
+    padAimBaseSpeed: 200,   // 初始瞄準移動速度 (px/s)
+    padAimMaxSpeed: 1000,   // 加速後最大速度
+    padAimAccelDelay: 0.3,  // 按住多久開始加速 (s)
+    padAimAccelTime: 0.8,   // 加速到 max 的時間 (s)
+    padCamLerpSpeed: 8,     // camera 追蹤 aimpoint 的 lerp 速度
+
+    // 回歸 (共用)
+    camBackPlayerDelay: 1.2,  // 丟出後延遲回歸（秒）
+    camBackPlayerTime: 1.0    // 回歸 tween 時間（秒）
 }
 ```
 
 ### 狀態（GameState）
 
+- `gameState.aimInputMode` — `'MOUSE'` | `'PAD'`（瞄準輸入模式）
+- `gameState.padAim` — `{ x, y, moveHoldTime }`（PAD 模式虛擬瞄準點）
 - `gameState.world` — `{ width, height }` 世界尺寸
-- `gameState.camera` — `{ x, y, zoom, targetZoom, aimFollow }` 攝影機中心位置、縮放、準心追蹤狀態
-- `gameState.camera.aimFollow` — `{ state, weight, returnDelay, returnTimer, returnDuration, returnFromX, returnFromY }`
-- `input.mouse.screenX/screenY` — 螢幕座標（用於 HUD 互動）
-- `input.mouse.x/y` — 世界座標（透過 `screenToWorld()` 自動轉換）
+- `gameState.camera` — `{ x, y, zoom, targetZoom, edgePan, aimFollow }`
+- `gameState.camera.edgePan` — `{ offsetX, offsetY }`（Edge Pan 累積偏移）
+- `gameState.camera.aimFollow` — `{ state, weight, padCamX, padCamY, returnDelay, returnTimer, returnDuration, returnFromX, returnFromY }`
+- `input.mouse.screenX/screenY` — 螢幕座標（用於 Edge Pan 計算）
+- `input.mouse.x/y` — 世界座標（透過 `screenToWorld()` 自動轉換；MOUSE aiming 時每幀重算）
 
 ### Camera.js API
 
@@ -140,6 +155,7 @@ SETTINGS.cameraConfig = {
 | `getAimFollowTarget(dt, pX, pY, aX, aY)` | 根據 aimFollow 狀態計算攝影機目標位置 |
 | `startAimFollow()` | 進入 FOLLOW_AIM 狀態（enterAimMode 時呼叫） |
 | `startCameraReturn(hasDelay)` | 開始回歸玩家（true=丟出有延遲，false=取消無延遲） |
+| `resetAimCameraState()` | 重置 edgePan offset + padAim（離開 aiming 時呼叫） |
 
 ### 繪製順序
 
@@ -156,7 +172,7 @@ draw():
 
 ### 座標轉換
 
-滑鼠移動時自動轉換：螢幕座標存入 `screenX/screenY`，世界座標存入 `x/y`。所有遊戲邏輯（射擊、瞄準、拖曳、碰撞）使用 `input.mouse.x/y`（世界座標），無需手動轉換。
+滑鼠移動時自動轉換：螢幕座標存入 `screenX/screenY`，世界座標存入 `x/y`。所有遊戲邏輯（射擊、瞄準、拖曳、碰撞）使用 `input.mouse.x/y`（世界座標），無需手動轉換。MOUSE aiming 時每幀額外重算 `screenToWorld`，確保 Edge Pan 捲動時 aimpoint 正確追蹤。
 
 ### 攝影機夾邊
 
@@ -168,18 +184,34 @@ draw():
 - `cam.zoom` 每幀 lerp 追趕 `targetZoom`，產生平滑過渡
 - 範圍限制：`zoomMin` (0.3) ~ `zoomMax` (3.0)
 
-### Aim Follow 攝影機追蹤準心
+### 瞄準攝影機系統（Dual Aim Input Mode）
 
-大範圍瞄準時（maxAimRadius 大），準心接近螢幕邊緣時攝影機自動從玩家過渡到準心位置。
+瞄準時支援兩種輸入模式，中鍵切換：
 
-**三種狀態**（`gameState.camera.aimFollow.state`）：
+**`aimInputMode: 'MOUSE'`（預設）— Edge Pan**
+- cursor 進入螢幕邊緣外 12%（`edgePanMargin`）時，攝影機往該方向捲動
+- 捲動速度與「深入邊緣的程度」成正比（線性 ramp），除以 zoom 保持螢幕空間速度一致
+- 攝影機位置 = player + 累積 edgePan offset
+- cursor 離開邊緣即停止
+- MOUSE aiming 時每幀重算 `screenToWorld`（camera 捲動時 world coords 需更新）
+
+**`aimInputMode: 'PAD'`（中鍵切換）— WASD Aimpoint Control**
+- 隱藏 cursor（`canvas.style.cursor = 'none'`）
+- WASD 移動虛擬瞄準點 `gameState.padAim`（8 方向）
+- 速度加速曲線：前 0.3s baseSpeed(200) → 線性 ramp 0.8s → maxSpeed(1000)
+- 攝影機用 exp lerp（`padCamLerpSpeed: 8`）追蹤 aimpoint 使其置中
+
+**切換行為**：
+- MOUSE→PAD：padAim 初始化為當前 aimpoint、padCam 從當前攝影機位置開始
+- PAD→MOUSE：edgePan offset = 當前攝影機位移（避免跳動）
+- 丟出/取消後：重置為 MOUSE、顯示 cursor、清除 offset
+
+**三種攝影機狀態**（`gameState.camera.aimFollow.state`）：
 - `FOLLOW_PLAYER` — 預設，攝影機跟隨玩家
-- `FOLLOW_AIM` — 瞄準中，根據準心離螢幕邊緣的距離動態計算混合權重
+- `FOLLOW_AIM` — 瞄準中，根據 aimInputMode 執行 Edge Pan 或 PAD 追蹤
 - `RETURNING` — 離開瞄準後，延遲 + ease-out quad tween 回歸玩家
 
-**Player → Aimpoint（進入）**：安全區域 = 螢幕半寬 × (1 - threshold)，準心超出安全區域時 weight 增加，攝影機偏向準心方向。weight 用 `camToAimLerpSpeed` 平滑過渡。
-
-**Aimpoint → Player（回程）**：丟出道具後等待 `camBackPlayerDelay`，再以 `camBackPlayerTime` 的 ease-out quad 從當時攝影機位置 tween 回玩家。取消瞄準（hold 不足）時無延遲直接回歸。
+**回歸（共用）**：丟出道具後等待 `camBackPlayerDelay`(1.2s)，再以 `camBackPlayerTime`(1.0s) 的 ease-out quad tween 回歸。取消瞄準時無延遲直接回歸。
 
 **Aiming 中 pointer-events**：瞄準模式下 `#settings-panel` 設為 `pointer-events: none`，防止游標移到 panel 上導致 canvas mousemove 停止觸發。離開瞄準後還原。
 
