@@ -439,7 +439,6 @@ function getAimRadius() {
 // 繪製瞄準 UI
 export function drawAimingUI(ctx, input) {
     const aimPos = getClampedAimPosition(input);
-    const aimRadius = getAimRadius();
 
     let isColliding = false;
     for (let obj of gameState.fieldObjects) {
@@ -448,23 +447,6 @@ export function drawAimingUI(ctx, input) {
             break;
         }
     }
-
-    // 瞄準範圍圓
-    ctx.strokeStyle = SETTINGS.colors.aimRange;
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, aimRadius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, aimRadius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
 
     // 連線
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';

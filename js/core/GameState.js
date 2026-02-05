@@ -17,16 +17,7 @@ export const gameState = {
 
     // 攝影機
     camera: {
-        x: 0, y: 0, zoom: 1.0, targetZoom: 1.0,
-        autoZoom: {
-            active: false,
-            startZoom: 1.0,
-            endZoom: 1.0,
-            elapsed: 0,
-            duration: 1.0,
-            prevZoom: 1.0,       // F 前的 zoom，用於回復
-            waitTimer: 0         // LMB 後等待回 zoom 的倒數
-        }
+        x: 0, y: 0, zoom: 1.0, targetZoom: 1.0
     },
 
     // 遊戲物件集合

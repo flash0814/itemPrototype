@@ -25,7 +25,7 @@ import {
     drawHeldItemUI,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
-import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom, calcZoomForRadius, startAutoZoom } from './Camera.js';
+import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom } from './Camera.js';
 
 let canvas, ctx, container;
 let debugInfoElement, aimStatusElement;
@@ -173,43 +173,20 @@ function handleMiddleClick(e) {
 // 強制退出瞄準模式（死亡時呼叫）
 function exitAimMode() {
     if (gameState.currentMode !== GAME_STATE_MODE.AIMING) return;
-    const cam = gameState.camera;
-    const az = cam.autoZoom;
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
-    az.active = false;
-    az.waitTimer = 0;
-    startAutoZoom(az.prevZoom, SETTINGS.cameraConfig.autoZoomTime);
-    cam.targetZoom = az.prevZoom;
 }
 
 function toggleAimMode() {
-    const cam = gameState.camera;
-    const az = cam.autoZoom;
-
     if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
         // 沒有持有 active 道具就不進入瞄準
         if (!player.heldItem) return;
         gameState.currentMode = GAME_STATE_MODE.AIMING;
         aimStatusElement.style.display = 'block';
         input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
-
-        // Auto zoom：記錄當前 zoom，計算所需 zoom 並拉遠
-        az.prevZoom = cam.targetZoom;
-        az.waitTimer = 0;
-        const neededZoom = calcZoomForRadius(player.heldItem.maxAimRadius);
-        if (neededZoom < cam.zoom) {
-            startAutoZoom(neededZoom, SETTINGS.cameraConfig.autoZoomTime);
-            cam.targetZoom = neededZoom;
-        }
     } else {
         gameState.currentMode = GAME_STATE_MODE.ROAMING;
         aimStatusElement.style.display = 'none';
-
-        // 取消 aiming：直接回復 zoom（無等待）
-        az.waitTimer = 0;
-        startAutoZoom(az.prevZoom, SETTINGS.cameraConfig.autoZoomTime);
-        cam.targetZoom = az.prevZoom;
     }
 }
 
@@ -228,12 +205,7 @@ function tryThrowItem() {
 
     if (hitSolid) return;
 
-    // 取得 waitToBackZoom（從道具對應的 SETTINGS 取）
     const item = player.heldItem;
-    const itemType = item.constructor.name;
-    const cfgKey = 'item' + itemType;
-    const waitTime = (SETTINGS[cfgKey] && SETTINGS[cfgKey].waitToBackZoom) || 0;
-
     player.heldItem = null;
     item.isHeld = false;
 
@@ -248,27 +220,8 @@ function tryThrowItem() {
         item.activate();
     }
 
-    // 離開 aiming，設定等待後回復 zoom
-    const cam = gameState.camera;
-    const az = cam.autoZoom;
     gameState.currentMode = GAME_STATE_MODE.ROAMING;
     aimStatusElement.style.display = 'none';
-
-    // 只在 zoom 確實有改變時才做回復動畫
-    const zoomChanged = Math.abs(az.prevZoom - cam.zoom) > 0.01;
-    if (zoomChanged && waitTime > 0) {
-        // 先停止進場動畫（如果還在播放）
-        az.active = false;
-        az.waitTimer = waitTime;
-    } else if (zoomChanged) {
-        az.active = false;
-        startAutoZoom(az.prevZoom, SETTINGS.cameraConfig.autoZoomTime);
-        cam.targetZoom = az.prevZoom;
-    } else {
-        // zoom 沒變，不需要回復
-        az.active = false;
-        az.waitTimer = 0;
-    }
 }
 
 function spawnItem() {

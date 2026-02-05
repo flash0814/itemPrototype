@@ -19,7 +19,6 @@ export const SETTINGS = {
         wallBase: '#33333d',
         wallBorder: '#4a4a56',
         wallHighlight: 'rgba(255, 255, 255, 0.05)',
-        aimRange: 'rgba(50, 255, 100, 0.6)',
         aimValid: '#00ff00',
         aimInvalid: '#ff0000',
         healBox: '#00ff00',
@@ -75,8 +74,7 @@ export const SETTINGS = {
         counts: 6,
         radius: 170,
         value: 25,
-        tick: 0.8,
-        waitToBackZoom: 1.2
+        tick: 0.8
     },
 
     itemEnergyDrink: {
@@ -92,14 +90,13 @@ export const SETTINGS = {
         radius: 250,
         meteorSpeed: 800,
         meteorAltitude: 600,
-        meteorAngle: 45,
-        waitToBackZoom: 1.1
+        meteorAngle: 45
     },
 
     itemHealPack: { duration: 20, value: 30, maxAimRadius: 0 },
     itemInvincibleStar: { duration: 20, effectDuration: 10, defendRatio: 0, maxAimRadius: 0 },
     itemReviveFeather: { duration: 0 },
-    itemBomb: { duration: 0, maxAimRadius: 320, damage: 100, radius: 110, throwSpeed: 300, waitToBackZoom: 1.0 },
+    itemBomb: { duration: 0, maxAimRadius: 320, damage: 100, radius: 110, throwSpeed: 300 },
 
     // 跳字全域預設值
     floatingText: {
@@ -124,7 +121,6 @@ export const SETTINGS = {
         initialZoom: 1.0,
         zoomMin: 0.3,
         zoomMax: 3.0,
-        zoomStep: 0.1,
-        autoZoomTime: 1.0    // 自動 zoom 動畫時間（秒）
+        zoomStep: 0.1
     }
 };

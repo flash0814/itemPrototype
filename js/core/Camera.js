@@ -73,56 +73,6 @@ export function applyZoom(delta) {
  */
 export function updateZoom(dt) {
     const cam = gameState.camera;
-    const az = cam.autoZoom;
-
-    // Auto zoom wait 倒數（LMB 後等待）
-    if (az.waitTimer > 0) {
-        az.waitTimer -= dt;
-        if (az.waitTimer <= 0) {
-            // 等待結束，啟動回復 zoom
-            startAutoZoom(az.prevZoom, SETTINGS.cameraConfig.autoZoomTime);
-            cam.targetZoom = az.prevZoom;
-        }
-    }
-
-    // Auto zoom 動畫進行中
-    if (az.active) {
-        az.elapsed += dt;
-        const t = Math.min(1, az.elapsed / az.duration);
-        // ease-in-out (smoothstep)
-        const ease = t * t * (3 - 2 * t);
-        cam.zoom = az.startZoom + (az.endZoom - az.startZoom) * ease;
-
-        if (t >= 1) {
-            az.active = false;
-        }
-        return; // auto zoom 期間跳過手動 lerp
-    }
-
-    // 一般 lerp 追趕
     const lerpSpeed = 1 - Math.exp(-10 * dt);
     cam.zoom += (cam.targetZoom - cam.zoom) * lerpSpeed;
-}
-
-/**
- * 計算讓整個瞄準圈可見所需的 zoom 值
- */
-export function calcZoomForRadius(aimRadius) {
-    const margin = 80; // 邊距留白（px）
-    const diameter = aimRadius * 2 + margin;
-    const zoomW = gameState.width / diameter;
-    const zoomH = gameState.height / diameter;
-    return Math.min(zoomW, zoomH);
-}
-
-/**
- * 啟動 auto zoom 動畫
- */
-export function startAutoZoom(targetZoom, duration) {
-    const az = gameState.camera.autoZoom;
-    az.active = true;
-    az.startZoom = gameState.camera.zoom;
-    az.endZoom = targetZoom;
-    az.elapsed = 0;
-    az.duration = duration;
 }
