@@ -22,6 +22,7 @@ export class ItemBase {
         this.pickupRadius = 10;
         this.isHeld = false;
         this.isActivated = false;
+        this.hasFlightPath = false;
     }
 
     update(dt) {

@@ -1,6 +1,7 @@
 import { SETTINGS } from '../core/Settings.js';
 import { gameState, GAME_STATE_MODE } from '../core/GameState.js';
 import { player } from '../entities/Player.js';
+import { checkCollisionWithRect } from '../core/Utils.js';
 import { buffManager } from '../core/BuffManager.js';
 
 // 繪製 Buff 圖標
@@ -435,9 +436,38 @@ function getAimRadius() {
     return player.heldItem ? player.heldItem.maxAimRadius : 200;
 }
 
+// 檢測飛行路徑是否被障礙物擋住（排除 edgeWall）
+function isFlightPathBlocked(fromX, fromY, toX, toY, radius) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return false;
+
+    const steps = Math.ceil(dist / radius);
+    for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const x = fromX + dx * t;
+        const y = fromY + dy * t;
+
+        for (let obj of gameState.fieldObjects) {
+            if (obj.type === 'Wall') continue;
+            if (obj.isSolid && checkCollisionWithRect(x, y, radius, obj)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // 繪製瞄準 UI
 export function drawAimingUI(ctx, input) {
     const aimPos = getClampedAimPosition(input);
+
+    // 飛行路徑碰撞檢測（僅 hasFlightPath 的道具）
+    let pathBlocked = false;
+    if (player.heldItem && player.heldItem.hasFlightPath) {
+        pathBlocked = isFlightPathBlocked(player.x, player.y, aimPos.x, aimPos.y, 8);
+    }
 
     // 連線
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -447,7 +477,7 @@ export function drawAimingUI(ctx, input) {
     ctx.stroke();
 
     // 瞄準點
-    ctx.fillStyle = SETTINGS.colors.aimValid;
+    ctx.fillStyle = pathBlocked ? SETTINGS.colors.aimInvalid : SETTINGS.colors.aimValid;
     ctx.beginPath();
     ctx.arc(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, 0, Math.PI * 2);
     ctx.fill();

@@ -12,6 +12,7 @@ export class Bomb extends ItemBase {
         this.category = 'ACTIVE';
         this.maxAimRadius = SETTINGS.itemBomb.maxAimRadius;
         this.collisionMask = new Set([0]);
+        this.hasFlightPath = true;
         this.size = 16;
         this.fuseTimer = 0;
     }
@@ -37,7 +38,7 @@ export class Bomb extends ItemBase {
 
         // 拋物線：根據飛行時間計算初始 vz
         const flightTime = dist / speed;
-        this.gravity = 800;
+        this.gravity = 400;
         this.z = 10;
         // vz 負值 = 向上拋，gravity 會拉回來
         // 要在 flightTime 時 z 回到 0：z0 + vz*t - 0.5*g*t^2 = 0
