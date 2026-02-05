@@ -12,7 +12,6 @@ export class FieldObject {
         this.type = typeName;
         this.id = generateId(typeName);
 
-        this.isSolid = false;
         this.collisionLayer = 0;
         this.damage = 0;
         this.isDragging = false;

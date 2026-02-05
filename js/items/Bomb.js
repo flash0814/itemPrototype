@@ -11,7 +11,7 @@ export class Bomb extends ItemBase {
         super(x, y, SETTINGS.itemBomb.duration);
         this.category = 'ACTIVE';
         this.maxAimRadius = SETTINGS.itemBomb.maxAimRadius;
-        this.collisionMask = new Set([0]);
+        this.collisionMask = new Set([0, 1]);  // 撞實體 + 火焰陷阱
         this.hasFlightPath = true;
         this.size = 16;
         this.aimPreview = { radius: SETTINGS.itemBomb.radius };
@@ -118,7 +118,7 @@ export class Bomb extends ItemBase {
 
         // 傷害場景物件
         for (let obj of gameState.fieldObjects) {
-            if (obj.isSolid) {
+            if (this.collisionMask.has(obj.collisionLayer)) {
                 const closestX = Math.max(obj.x, Math.min(this.x, obj.x + obj.width));
                 const closestY = Math.max(obj.y, Math.min(this.y, obj.y + obj.height));
                 const cdx = this.x - closestX;

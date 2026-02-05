@@ -31,7 +31,8 @@ js/
     Player.js            — 玩家狀態（hp, trail, heldItem, invincible 等）
     FieldObject.js       — 場景物件基類
     Obstacle.js          — 障礙物（可拖曳/複製）
-    FireTrap.js          — 火焰陷阱（週期性傷害）
+    FireTrap.js          — 火焰陷阱（週期性傷害，layer 1）
+    WaterPond.js         — 水池（擋玩家、投射物穿越，layer 2）
   items/
     ItemBase.js          — 道具基類（物理、duration、pickup、dropToGround）
     HealBox.js           — 主動道具：治療區域（ACTIVE, 需瞄準丟出）
@@ -60,20 +61,40 @@ js/
 - **道具不從 activeItems 移除**：撿起時只設 `isHeld=true`，仍留在 `gameState.activeItems` 陣列中。draw/pickup 邏輯透過 flag 跳過。丟出時也不需 push 回去。
 - **Camera/Viewport 分離**：世界（world）為固定尺寸，畫布（viewport）隨瀏覽器視窗大小調整。攝影機跟隨玩家並夾在世界邊界內。所有遊戲物件在世界空間繪製，HUD 在螢幕空間繪製。
 
-## Collision System
+## Collision System（統一 collisionLayer/Mask）
 
-- **Collision Layer**（障礙物側）：`FieldObject` base class 定義 `collisionLayer: number`（預設 0），所有 subclass（EdgeWall、Obstacle、FireTrap）繼承
-- **Collision Mask**（Entity 側）：`Projectile` base class 和 `Bomb` 各自定義 `collisionMask: Set<number>`（預設 `{0}`）
-- **判定**：`collisionMask.has(obj.collisionLayer)` → 觸發碰撞
-- **Detection**：Rocket 用尖端點判定（`obj.contains`），Bomb 用圓形判定（`checkCollisionWithRect`）
-- 預留 layer 1, 2... 給未來可穿透的障礙物
+所有碰撞判斷統一使用 `collisionMask.has(obj.collisionLayer)`，已移除 `isSolid`。
+
+### Collision Layer（場景物件側）
+
+| Layer | 物件 | 說明 |
+|:-----:|------|------|
+| 0 | EdgeWall, Obstacle | 實體障礙，擋一切 |
+| 1 | FireTrap | 環境危害，不擋玩家 |
+| 2 | WaterPond | 地形障礙，擋玩家但不擋投射物 |
+
+### Collision Mask（實體側）
+
+| 實體 | Mask | 碰撞對象 |
+|------|------|----------|
+| Player（移動推擠） | `{0, 2}` | 牆、箱子、水池 |
+| Rocket | `{0}` | 牆、箱子 |
+| Bomb | `{0, 1}` | 牆、箱子、火焰陷阱 |
+| 飛行路徑預測 | 讀持有道具的 mask | 自動與實際碰撞一致 |
+
+### Detection 方式
+
+- Rocket：尖端點判定（`obj.contains`）
+- Bomb：圓形判定（`checkCollisionWithRect`）
+- Player 移動：圓形判定（`checkCollisionWithRect`）
+- 爆炸傷害：範圍內 `mask.has(layer)` 的物件呼叫 `takeDamage`
 
 ## Camera / Viewport 系統
 
 ### 概念
 
 - **World**：固定尺寸的遊戲世界（預設 2500x2500），origin (0,0) 在左上角
-- **Viewport**：16:9 畫布填滿瀏覽器，作為觀看世界的「窗口」
+- **Viewport**：畫布滿版填滿瀏覽器（無 margin、無固定比例），作為觀看世界的「窗口」
 - **Camera**：中心跟隨玩家，夾在世界邊界內，避免看到世界外
 
 ### 設定參數

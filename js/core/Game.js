@@ -6,6 +6,7 @@ import { player, updateEnergy, consumeEnergy, restoreEnergy, onRevive } from '..
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
 import { FireTrap } from '../entities/FireTrap.js';
+import { WaterPond } from '../entities/WaterPond.js';
 import { Rocket } from '../projectiles/Rocket.js';
 import { HealBox } from '../items/HealBox.js';
 import { HealPack } from '../items/HealPack.js';
@@ -118,7 +119,12 @@ export function initGame() {
         gameState.fieldObjects.push(new FireTrap(t.x, t.y));
     }
 
-    // 邊界牆（isSolid，不繪製 — Renderer 負責視覺）
+    // 水池（FireTrap 右方 400px）
+    for (const t of wc.fireTraps) {
+        gameState.fieldObjects.push(new WaterPond(t.x + 400, t.y));
+    }
+
+    // 邊界牆（collisionLayer=0，不繪製 — Renderer 負責視覺）
     const ww = wc.width, wh = wc.height, wt = wc.wallThickness;
     const wallDefs = [
         [0, 0, ww, wt],            // 上
@@ -128,7 +134,6 @@ export function initGame() {
     ];
     for (const [wx, wy, wWidth, wHeight] of wallDefs) {
         const wall = new FieldObject(wx, wy, wWidth, wHeight, 'Wall');
-        wall.isSolid = true;
         wall.draw = () => {}; // 視覺由 Renderer.drawWorldBounds 處理
         gameState.fieldObjects.push(wall);
     }
@@ -155,6 +160,7 @@ function handleMiddleClick(e) {
                 if (e.shiftKey) { // 複製
                     let newObj = null;
                     if (obj instanceof Obstacle) newObj = new Obstacle(obj.x, obj.y, obj.width);
+                    else if (obj instanceof WaterPond) newObj = new WaterPond(obj.x, obj.y);
                     else if (obj instanceof FireTrap) newObj = new FireTrap(obj.x, obj.y);
 
                     if (newObj) {
@@ -307,9 +313,9 @@ function updateDebugInfo() {
     }
 }
 
-function checkCollision(cx, cy, radius) {
+function checkCollisionWithMask(cx, cy, radius, mask) {
     for (let obj of gameState.fieldObjects) {
-        if (obj.isSolid && checkCollisionWithRect(cx, cy, radius, obj)) {
+        if (mask.has(obj.collisionLayer) && checkCollisionWithRect(cx, cy, radius, obj)) {
             return true;
         }
     }
@@ -432,7 +438,7 @@ function update(deltaTime) {
             }
         }
         // 檢查是否與玩家重疊
-        if (obj.isValidPlacement && obj.isSolid &&
+        if (obj.isValidPlacement && player.collisionMask.has(obj.collisionLayer) &&
             checkCollisionWithRect(player.x, player.y, SETTINGS.playerSize, obj)) {
             obj.isValidPlacement = false;
         }
@@ -463,7 +469,7 @@ function update(deltaTime) {
 
             let collideX = false;
             for (let obj of gameState.fieldObjects) {
-                if (obj.isSolid && checkCollisionWithRect(nextX, player.y, SETTINGS.playerSize, obj)) {
+                if (player.collisionMask.has(obj.collisionLayer) && checkCollisionWithRect(nextX, player.y, SETTINGS.playerSize, obj)) {
                     collideX = true;
                     break;
                 }
@@ -476,7 +482,7 @@ function update(deltaTime) {
 
             let collideY = false;
             for (let obj of gameState.fieldObjects) {
-                if (obj.isSolid && checkCollisionWithRect(player.x, nextY, SETTINGS.playerSize, obj)) {
+                if (player.collisionMask.has(obj.collisionLayer) && checkCollisionWithRect(player.x, nextY, SETTINGS.playerSize, obj)) {
                     collideY = true;
                     break;
                 }

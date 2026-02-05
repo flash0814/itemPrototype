@@ -4,7 +4,7 @@ import { FieldObject } from './FieldObject.js';
 export class Obstacle extends FieldObject {
     constructor(x, y, size) {
         super(x, y, size, size, "Obstacle");
-        this.isSolid = true;
+        // collisionLayer = 0 (inherited) — 實體障礙
     }
 
     draw(ctx) {

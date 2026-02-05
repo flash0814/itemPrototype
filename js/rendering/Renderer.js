@@ -436,8 +436,11 @@ function getAimRadius() {
     return player.heldItem ? player.heldItem.maxAimRadius : 200;
 }
 
-// 檢測飛行路徑是否被障礙物擋住（排除 edgeWall）
+// 檢測飛行路徑是否被障礙物擋住（使用道具的 collisionMask）
 function isFlightPathBlocked(fromX, fromY, toX, toY, radius) {
+    const mask = player.heldItem?.collisionMask;
+    if (!mask) return false;
+
     const dx = toX - fromX;
     const dy = toY - fromY;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -451,7 +454,7 @@ function isFlightPathBlocked(fromX, fromY, toX, toY, radius) {
 
         for (let obj of gameState.fieldObjects) {
             if (obj.type === 'Wall') continue;
-            if (obj.isSolid && checkCollisionWithRect(x, y, radius, obj)) {
+            if (mask.has(obj.collisionLayer) && checkCollisionWithRect(x, y, radius, obj)) {
                 return true;
             }
         }

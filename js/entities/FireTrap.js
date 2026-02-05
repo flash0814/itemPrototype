@@ -5,6 +5,7 @@ import { player, takeDamage } from './Player.js';
 export class FireTrap extends FieldObject {
     constructor(x, y) {
         super(x, y, 100, 100, "FireTrap");
+        this.collisionLayer = 1;  // 環境危害：不擋玩家，可選擋投射物
         this.damage = SETTINGS.general.fireTrapDmg;
         this.tickTimer = 0;
         this.flames = [];

@@ -99,9 +99,10 @@ class Meteor {
             takeDamage(damage);
         }
 
-        // 傷害場景物件
+        // 傷害場景物件（Meteor 只對 layer 0 造成傷害）
+        const meteorMask = new Set([0]);
         for (let obj of gameState.fieldObjects) {
-            if (obj.isSolid) {
+            if (meteorMask.has(obj.collisionLayer)) {
                 const closestX = Math.max(obj.x, Math.min(this.x, obj.x + obj.width));
                 const closestY = Math.max(obj.y, Math.min(this.y, obj.y + obj.height));
                 const dx = this.x - closestX;

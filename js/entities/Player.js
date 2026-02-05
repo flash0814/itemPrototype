@@ -21,6 +21,7 @@ export const player = {
     maxInvincibleTimer: 0,
     defendRatio: 1,
     heldItem: null,
+    collisionMask: new Set([0, 2]),  // layer 0（實體障礙）+ layer 2（水池）擋住
 
     // Energy
     maxEnergy: SETTINGS.general.maxEnergy,
