@@ -16,6 +16,7 @@ export class HealBox extends ItemBase {
         this.tickTimer = 0;
         this.pulseTime = 0;
         this.pulseDuration = 0.5;
+        this.aimPreview = { radius: this.radius };
     }
 
     // 從持有狀態丟出啟動

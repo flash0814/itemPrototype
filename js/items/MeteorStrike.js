@@ -167,6 +167,7 @@ export class MeteorStrike extends ItemBase {
         this.category = 'ACTIVE';
         this.maxAimRadius = SETTINGS.itemMeteorStrike.maxAimRadius;
         this.size = 16;
+        this.aimPreview = { radius: SETTINGS.itemMeteorStrike.radius };
     }
 
     activate() {

@@ -289,17 +289,8 @@ function fireRocket(startX, startY, targetX, targetY) {
 }
 
 function resize() {
-    const margin = 40;
-    const availableWidth = window.innerWidth - margin;
-    const availableHeight = window.innerHeight - margin;
-
-    if (availableWidth / availableHeight > SETTINGS.aspectRatio) {
-        gameState.height = availableHeight;
-        gameState.width = gameState.height * SETTINGS.aspectRatio;
-    } else {
-        gameState.width = availableWidth;
-        gameState.height = gameState.width / SETTINGS.aspectRatio;
-    }
+    gameState.width = window.innerWidth;
+    gameState.height = window.innerHeight;
 
     canvas.width = gameState.width;
     canvas.height = gameState.height;

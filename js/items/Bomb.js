@@ -14,6 +14,7 @@ export class Bomb extends ItemBase {
         this.collisionMask = new Set([0]);
         this.hasFlightPath = true;
         this.size = 16;
+        this.aimPreview = { radius: SETTINGS.itemBomb.radius };
         this.fuseTimer = 0;
     }
 

@@ -23,6 +23,7 @@ export class ItemBase {
         this.isHeld = false;
         this.isActivated = false;
         this.hasFlightPath = false;
+        this.aimPreview = null;  // { radius } — 瞄準時顯示作用範圍
     }
 
     update(dt) {

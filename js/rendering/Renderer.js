@@ -476,6 +476,18 @@ export function drawAimingUI(ctx, input) {
     ctx.lineTo(aimPos.x, aimPos.y);
     ctx.stroke();
 
+    // 作用範圍預覽
+    if (player.heldItem && player.heldItem.aimPreview) {
+        const r = player.heldItem.aimPreview.radius;
+        ctx.beginPath();
+        ctx.arc(aimPos.x, aimPos.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
     // 瞄準點
     ctx.fillStyle = pathBlocked ? SETTINGS.colors.aimInvalid : SETTINGS.colors.aimValid;
     ctx.beginPath();

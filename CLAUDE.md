@@ -296,7 +296,7 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 2. **地上狀態** → duration 倒數（0=永久）
 3. **PASSIVE 撿起** → `onPassiveEffect()` → isDead
 4. **ACTIVE 撿起** → `isHeld=true`, 存入 `player.heldItem`
-5. **Hold F** → 瞄準模式（maxAimRadius 限制瞄準距離，不顯示圈圈；準心不超出 edgeWall 內側）
+5. **Hold F** → 瞄準模式（maxAimRadius 限制瞄準距離；準心不超出 edgeWall 內側；有 `aimPreview` 的道具會在瞄準點畫出作用範圍圈）
 6. **放開 F** → `activate()` 丟出，可丟在任何位置（含 obstacle 上）；Hold 不足 `useItemHoldDelay`（def 0.2s）則取消不丟
 7. **效果結束** → isDead
 
@@ -316,6 +316,15 @@ Bomb 是唯一從玩家位置飛到目標的 ACTIVE 道具（其他 ACTIVE 瞬�
 - 爆炸效果同 Rocket 但紅色（`bombExplosion` 粒子 + 紅色 `ExplosionWave`）
 - 傷害判定同 MeteorStrike（含自傷 + 場景物件）
 - `ExplosionWave` 支援可選顏色參數（向後相容，預設仍為 rocket 橘色）
+
+### 瞄準範圍預覽（aimPreview）
+
+ItemBase 預設 `aimPreview = null`，有作用範圍的道具在 constructor 設定：
+- `HealBox` → `{ radius: this.radius }`
+- `MeteorStrike` → `{ radius: SETTINGS.itemMeteorStrike.radius }`
+- `Bomb` → `{ radius: SETTINGS.itemBomb.radius }`
+
+`drawAimingUI()` 讀取 `player.heldItem.aimPreview`，有值就在瞄準點畫半透明圈。
 
 ### 道具交換（swap）
 

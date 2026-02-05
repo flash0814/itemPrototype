@@ -2,22 +2,22 @@ body {
     margin: 0;
     overflow: hidden;
     background-color: #0f0f12;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     user-select: none;
 }
 
 #game-container {
-    position: relative;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-    border: 1px solid #333;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 canvas {
     display: block;
+    width: 100%;
+    height: 100%;
     background-color: #16161a;
     cursor: crosshair;
 }
