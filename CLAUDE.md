@@ -429,6 +429,7 @@ grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|
 - `gameState.currentItemType` 決定 R 鍵生成哪種道具
 - Panel 內 select/input 元素在 keydown 時自動 `preventDefault + blur`，防止原生鍵盤行為攔截遊戲按鍵
 - **下拉高亮系統**：點擊 select 加上高亮（`.select-active`），點擊 panel 內其他區域取消。高亮中普通滾輪切換選項（非循環），Ctrl+滾輪保留給 zoom
+- **Panel 點擊重置移動鍵**：點擊 panel 時以 capture phase 重置 WASD，防止按住移動中點 panel 導致 keyup 被 native dropdown 吞掉而卡方向
 
 ## 已知 Bug 與修復紀錄
 

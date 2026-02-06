@@ -1,5 +1,5 @@
 import { SETTINGS } from '../core/Settings.js';
-import { gameState } from '../core/GameState.js';
+import { gameState, input } from '../core/GameState.js';
 import { player } from '../entities/Player.js';
 
 // UI 輸入元素引用
@@ -220,6 +220,11 @@ function setupSelectHighlight() {
     const panel = document.getElementById('settings-panel');
     const allSelects = panel.querySelectorAll('select');
     let activeSelect = null;
+
+    // 點擊 panel 任意處 → 重置移動鍵（防止 keyup 被 native dropdown 吞掉）
+    panel.addEventListener('click', () => {
+        input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
+    }, true);
 
     // 點擊 select → 高亮
     allSelects.forEach(sel => {
