@@ -118,7 +118,7 @@ SETTINGS.cameraConfig = {
     edgePanMargin: 0.12,    // 螢幕外 12% 觸發捲動
     edgePanMaxSpeed: 600,   // 最大捲動速度 (world px/s, ÷zoom)
 
-    // PAD Aim (WASD aim)
+    // PAD Aim (Arrow keys aim)
     padAimBaseSpeed: 200,   // 初始瞄準移動速度 (px/s)
     padAimMaxSpeed: 1000,   // 加速後最大速度
     padAimAccelDelay: 0.3,  // 按住多久開始加速 (s)
@@ -150,7 +150,7 @@ SETTINGS.cameraConfig = {
 | `applyCameraTransform(ctx)` | 繪製世界物件前呼叫，設置 ctx 變換 |
 | `restoreCameraTransform(ctx)` | 繪製世界物件後呼叫，還原 ctx |
 | `screenToWorld(sx, sy)` | 螢幕座標 → 世界座標 |
-| `applyZoom(delta)` | 滾輪縮放（線性步進），delta>0 縮小 / delta<0 放大 |
+| `applyZoom(delta)` | Ctrl+滾輪縮放（線性步進），delta>0 縮小 / delta<0 放大 |
 | `updateZoom(dt)` | 每幀 lerp 追趕 targetZoom |
 | `getAimFollowTarget(dt, pX, pY, aX, aY)` | 根據 aimFollow 狀態計算攝影機目標位置 |
 | `startAimFollow()` | 進入 FOLLOW_AIM 狀態（enterAimMode 時呼叫） |
@@ -180,6 +180,7 @@ draw():
 
 ### Zoom 系統
 
+- **Ctrl+滾輪** 縮放（普通滾輪保留給 panel 下拉高亮切換）
 - 線性步進：`targetZoom ± zoomStep`（def 0.1），`Math.round` 確保精確小數 2 位
 - `cam.zoom` 每幀 lerp 追趕 `targetZoom`，產生平滑過渡
 - 範圍限制：`zoomMin` (0.3) ~ `zoomMax` (3.0)
@@ -195,9 +196,9 @@ draw():
 - cursor 離開邊緣即停止
 - MOUSE aiming 時每幀重算 `screenToWorld`（camera 捲動時 world coords 需更新）
 
-**`aimInputMode: 'PAD'`（中鍵切換）— WASD Aimpoint Control**
+**`aimInputMode: 'PAD'`（中鍵切換）— Arrow Keys Aimpoint Control**
 - 隱藏 cursor（`canvas.style.cursor = 'none'`）
-- WASD 移動虛擬瞄準點 `gameState.padAim`（8 方向）
+- 方向鍵（↑↓←→）移動虛擬瞄準點 `gameState.padAim`（8 方向）
 - 速度加速曲線：前 0.3s baseSpeed(200) → 線性 ramp 0.8s → maxSpeed(1000)
 - 攝影機用 exp lerp（`padCamLerpSpeed: 8`）追蹤 aimpoint 使其置中
 
@@ -427,6 +428,7 @@ grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|
 - Items：HealBox / HealPack / InvincibleStar / EnergyDrink / MeteorStrike / ReviveFeather 六選一，各有獨立參數群組
 - `gameState.currentItemType` 決定 R 鍵生成哪種道具
 - Panel 內 select/input 元素在 keydown 時自動 `preventDefault + blur`，防止原生鍵盤行為攔截遊戲按鍵
+- **下拉高亮系統**：點擊 select 加上高亮（`.select-active`），點擊 panel 內其他區域取消。高亮中普通滾輪切換選項（非循環），Ctrl+滾輪保留給 zoom
 
 ## 已知 Bug 與修復紀錄
 

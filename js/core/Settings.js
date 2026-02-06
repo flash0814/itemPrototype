@@ -132,7 +132,7 @@ export const SETTINGS = {
         padAimMaxSpeed: 1000,        // 加速後最大速度
         padAimAccelDelay: 0.3,       // 按住多久開始加速 (s)
         padAimAccelTime: 0.8,        // 加速到 max 的時間 (s)
-        padCamLerpSpeed: 8,          // camera 追蹤 aimpoint 的 lerp 速度
+        padCamLerpSpeed: 12,          // camera 追蹤 aimpoint 的 lerp 速度
 
         // 回歸 (共用)
         camBackPlayerDelay: 1.2,     // 丟出道具後延遲幾秒才開始回歸玩家

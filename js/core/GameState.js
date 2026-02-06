@@ -63,6 +63,6 @@ export const editorState = {
 };
 
 export const input = {
-    keys: { w: false, a: false, s: false, d: false },
+    keys: { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false },
     mouse: { x: 0, y: 0, screenX: 0, screenY: 0, valid: false }
 };

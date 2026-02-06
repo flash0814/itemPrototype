@@ -63,6 +63,12 @@ select {
     border-radius: 3px;
     margin-bottom: 10px;
     font-size: 12px;
+    cursor: pointer;
+}
+
+select.select-active {
+    border-color: #00f3ff;
+    box-shadow: 0 0 4px rgba(0, 243, 255, 0.5);
 }
 
 #group-healpack,

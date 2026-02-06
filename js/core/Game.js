@@ -51,6 +51,7 @@ export function initGame() {
     // 鍵盤事件
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
+        if (key.startsWith('arrow')) e.preventDefault();
         if (player.isDead) return;
         if (key === 'f') enterAimMode();
         if (key === 'r') spawnItem();
@@ -82,8 +83,9 @@ export function initGame() {
         input.mouse.y = world.y;
     });
 
-    // 滾輪縮放
+    // Ctrl+滾輪縮放
     canvas.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return;
         e.preventDefault();
         applyZoom(e.deltaY);
     }, { passive: false });
@@ -543,13 +545,13 @@ function update(deltaTime) {
         player.currentAngle = lerpAngle(player.currentAngle, player.targetAngle, t);
 
     } else if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
-        // PAD mode: WASD 移動虛擬瞄準點
+        // PAD mode: Arrow keys 移動虛擬瞄準點
         if (gameState.aimInputMode === 'PAD') {
             let adx = 0, ady = 0;
-            if (input.keys.w) ady -= 1;
-            if (input.keys.s) ady += 1;
-            if (input.keys.a) adx -= 1;
-            if (input.keys.d) adx += 1;
+            if (input.keys.arrowup) ady -= 1;
+            if (input.keys.arrowdown) ady += 1;
+            if (input.keys.arrowleft) adx -= 1;
+            if (input.keys.arrowright) adx += 1;
 
             if (adx !== 0 || ady !== 0) {
                 const len = Math.sqrt(adx * adx + ady * ady);

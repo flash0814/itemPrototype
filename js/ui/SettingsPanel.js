@@ -208,8 +208,53 @@ export function initSettingsPanel() {
         el.addEventListener('change', () => el.blur());
     });
 
+    // --- Select 高亮 + 滾輪切換 ---
+    setupSelectHighlight();
+
     // --- Sync DOM inputs from SETTINGS ---
     syncInputsFromSettings();
+}
+
+/** 下拉選單高亮互動：點擊高亮、panel 空白處取消、滾輪切換選項 */
+function setupSelectHighlight() {
+    const panel = document.getElementById('settings-panel');
+    const allSelects = panel.querySelectorAll('select');
+    let activeSelect = null;
+
+    // 點擊 select → 高亮
+    allSelects.forEach(sel => {
+        sel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeSelect && activeSelect !== sel) {
+                activeSelect.classList.remove('select-active');
+            }
+            activeSelect = sel;
+            sel.classList.add('select-active');
+        });
+    });
+
+    // 點擊 panel 內非 select 區域 → 取消高亮
+    panel.addEventListener('click', () => {
+        if (activeSelect) {
+            activeSelect.classList.remove('select-active');
+            activeSelect = null;
+        }
+    });
+
+    // 全域滾輪切換高亮選項（非循環，Ctrl+滾輪保留給 zoom）
+    window.addEventListener('wheel', (e) => {
+        if (!activeSelect || e.ctrlKey) return;
+        e.preventDefault();
+        const idx = activeSelect.selectedIndex;
+        const maxIdx = activeSelect.options.length - 1;
+        if (e.deltaY > 0 && idx < maxIdx) {
+            activeSelect.selectedIndex = idx + 1;
+            activeSelect.dispatchEvent(new Event('change'));
+        } else if (e.deltaY < 0 && idx > 0) {
+            activeSelect.selectedIndex = idx - 1;
+            activeSelect.dispatchEvent(new Event('change'));
+        }
+    }, { passive: false });
 }
 
 /** 將 SETTINGS 的值寫入所有 DOM input，確保面板顯示與程式碼一致 */
