@@ -21,7 +21,6 @@ export const SETTINGS = {
         wallBorder: '#4a4a56',
         wallHighlight: 'rgba(255, 255, 255, 0.05)',
         aimValid: '#00ff00',
-        aimInvalid: '#ff0000',
         healBox: '#00ff00',
         healRange: 'rgba(0, 255, 0, 0.2)',
         healPack: '#ffffff',

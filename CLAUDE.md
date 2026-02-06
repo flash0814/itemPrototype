@@ -88,6 +88,7 @@ js/
 - Bomb：圓形判定（`checkCollisionWithRect`）
 - Player 移動：圓形判定（`checkCollisionWithRect`）
 - 爆炸傷害：範圍內 `mask.has(layer)` 的物件呼叫 `takeDamage`
+- 飛行路徑 clamp：`getFlightPathClamped()` 用 ray vs 膨脹矩形（Minkowski Sum）精確算交點，aimpoint 自動 clamp 到障礙物前最遠可達點（無離散取樣晃動）
 
 ## Camera / Viewport 系統
 
@@ -350,7 +351,7 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 2. **地上狀態** → duration 倒數（0=永久）
 3. **PASSIVE 撿起** → `onPassiveEffect()` → isDead
 4. **ACTIVE 撿起** → `isHeld=true`, 存入 `player.heldItem`
-5. **Hold F** → 瞄準模式（maxAimRadius 限制瞄準距離；準心不超出 edgeWall 內側；有 `aimPreview` 的道具會在瞄準點畫出作用範圍圈）
+5. **Hold F** → 瞄準模式（maxAimRadius 限制瞄準距離；準心不超出 edgeWall 內側；飛行路徑道具如 Bomb 會 clamp 到障礙物前最遠可達點；有 `aimPreview` 的道具會在瞄準點畫出作用範圍圈）
 6. **放開 F** → `activate()` 丟出，可丟在任何位置（含 obstacle 上）；Hold 不足 `useItemHoldDelay`（def 0.2s）則取消不丟
 7. **效果結束** → isDead
 

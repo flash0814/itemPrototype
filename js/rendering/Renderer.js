@@ -436,41 +436,70 @@ function getAimRadius() {
     return player.heldItem ? player.heldItem.maxAimRadius : 200;
 }
 
-// 檢測飛行路徑是否被障礙物擋住（使用道具的 collisionMask）
-function isFlightPathBlocked(fromX, fromY, toX, toY, radius) {
+// 射線 vs 膨脹矩形交點（Minkowski Sum：矩形四邊外推 radius）
+// 回傳射線首次碰到膨脹矩形的 t 值（0~1），無碰撞回傳 Infinity
+function rayVsExpandedRect(fromX, fromY, dx, dy, obj, radius) {
+    const left   = obj.x - radius;
+    const right  = obj.x + obj.width + radius;
+    const top    = obj.y - radius;
+    const bottom = obj.y + obj.height + radius;
+
+    let tMin, tMax;
+
+    if (dx !== 0) {
+        const t1 = (left - fromX) / dx;
+        const t2 = (right - fromX) / dx;
+        tMin = Math.min(t1, t2);
+        tMax = Math.max(t1, t2);
+    } else {
+        // 射線水平分量為 0，檢查起點是否在範圍內
+        if (fromX < left || fromX > right) return Infinity;
+        tMin = -Infinity;
+        tMax = Infinity;
+    }
+
+    if (dy !== 0) {
+        const t1 = (top - fromY) / dy;
+        const t2 = (bottom - fromY) / dy;
+        const tyMin = Math.min(t1, t2);
+        const tyMax = Math.max(t1, t2);
+        tMin = Math.max(tMin, tyMin);
+        tMax = Math.min(tMax, tyMax);
+    } else {
+        if (fromY < top || fromY > bottom) return Infinity;
+    }
+
+    if (tMin > tMax || tMax < 0) return Infinity;
+    return tMin > 0 ? tMin : tMax > 0 ? 0 : Infinity;
+}
+
+// 沿飛行路徑找最遠可達位置（Ray vs 膨脹矩形，精確無晃動）
+function getFlightPathClamped(fromX, fromY, toX, toY, radius) {
     const mask = player.heldItem?.collisionMask;
-    if (!mask) return false;
+    if (!mask) return { x: toX, y: toY };
 
     const dx = toX - fromX;
     const dy = toY - fromY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return false;
+    if (dx === 0 && dy === 0) return { x: toX, y: toY };
 
-    const steps = Math.ceil(dist / radius);
-    for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
-        const x = fromX + dx * t;
-        const y = fromY + dy * t;
+    let minT = 1; // 1 = 完整到達 aimpoint
 
-        for (let obj of gameState.fieldObjects) {
-            if (obj.type === 'Wall') continue;
-            if (mask.has(obj.collisionLayer) && checkCollisionWithRect(x, y, radius, obj)) {
-                return true;
-            }
-        }
+    for (const obj of gameState.fieldObjects) {
+        if (obj.type === 'Wall') continue;
+        if (!mask.has(obj.collisionLayer)) continue;
+        const t = rayVsExpandedRect(fromX, fromY, dx, dy, obj, radius);
+        if (t < minT) minT = t;
     }
-    return false;
+
+    return {
+        x: fromX + dx * minT,
+        y: fromY + dy * minT
+    };
 }
 
 // 繪製瞄準 UI
 export function drawAimingUI(ctx, input) {
     const aimPos = getClampedAimPosition(input);
-
-    // 飛行路徑碰撞檢測（僅 hasFlightPath 的道具）
-    let pathBlocked = false;
-    if (player.heldItem && player.heldItem.hasFlightPath) {
-        pathBlocked = isFlightPathBlocked(player.x, player.y, aimPos.x, aimPos.y, 8);
-    }
 
     // 連線
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -492,7 +521,7 @@ export function drawAimingUI(ctx, input) {
     }
 
     // 瞄準點
-    ctx.fillStyle = pathBlocked ? SETTINGS.colors.aimInvalid : SETTINGS.colors.aimValid;
+    ctx.fillStyle = SETTINGS.colors.aimValid;
     ctx.beginPath();
     ctx.arc(aimPos.x, aimPos.y, SETTINGS.aimIndicatorRadius, 0, Math.PI * 2);
     ctx.fill();
@@ -528,6 +557,13 @@ export function getClampedAimPosition(input) {
     const world = gameState.world;
     finalX = Math.max(wallT, Math.min(world.width - wallT, finalX));
     finalY = Math.max(wallT, Math.min(world.height - wallT, finalY));
+
+    // 飛行路徑 clamp（hasFlightPath 的道具如 Bomb，限制在障礙物前方）
+    if (player.heldItem && player.heldItem.hasFlightPath) {
+        const clamped = getFlightPathClamped(player.x, player.y, finalX, finalY, 8);
+        finalX = clamped.x;
+        finalY = clamped.y;
+    }
 
     // PAD mode: 寫回 clamped 值防止累積超出
     if (isPad) {
