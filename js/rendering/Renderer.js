@@ -3,6 +3,7 @@ import { gameState, GAME_STATE_MODE } from '../core/GameState.js';
 import { player } from '../entities/Player.js';
 import { checkCollisionWithRect } from '../core/Utils.js';
 import { buffManager } from '../core/BuffManager.js';
+import { dashState } from '../core/DashSystem.js';
 
 // 繪製 Buff 圖標
 export function drawBuffIcon(ctx, x, y, size, progress, color, type = 'SHIELD') {
@@ -369,6 +370,80 @@ export function drawPlayerHPBar(ctx) {
     ctx.strokeStyle = '#555';
     ctx.lineWidth = 1;
     ctx.strokeRect(-barW / 2 - 1, energyY - 1, barW + 2, energyBarH + 2);
+
+    ctx.restore();
+}
+
+// 繪製 Dash 弧形量表（玩家左側）
+export function drawDashGauge(ctx) {
+    const cfg = SETTINGS.dashConfig;
+    if (cfg.maxEnergy <= 0) return;
+
+    const pct = dashState.displayDashEnergy / cfg.maxEnergy;
+
+    ctx.save();
+
+    let shakeX = 0, shakeY = 0;
+    if (player.damageShakeTimer > 0) {
+        const si = 3;
+        shakeX = (Math.random() - 0.5) * si * 2;
+        shakeY = (Math.random() - 0.5) * si * 2;
+    }
+    ctx.translate(player.x + shakeX, player.y + shakeY);
+
+    const gaugeX = -28;
+    const gaugeRX = 6;
+    const gaugeRY = 18;
+    const lineWidth = 4;
+    const segments = 20;
+
+    // Arc from bottom (+PI/2) to top (-PI/2), 180 degrees
+    const startAngle = Math.PI * 0.5;
+    const totalArc = Math.PI;
+
+    // Background track
+    ctx.strokeStyle = SETTINGS.colors.dashGaugeBg;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const angle = startAngle - totalArc * t;
+        const px = gaugeX - Math.cos(angle) * gaugeRX;
+        const py = Math.sin(angle) * gaugeRY;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Filled portion (bottom up)
+    if (pct > 0.01) {
+        const grad = ctx.createLinearGradient(gaugeX, gaugeRY, gaugeX, -gaugeRY);
+        grad.addColorStop(0, '#cc6600');
+        grad.addColorStop(1, '#ffaa00');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        const fillSegments = Math.ceil(segments * pct);
+        for (let i = 0; i <= fillSegments; i++) {
+            const t = Math.min(i / segments, pct);
+            const angle = startAngle - totalArc * t;
+            const px = gaugeX - Math.cos(angle) * gaugeRX;
+            const py = Math.sin(angle) * gaugeRY;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Glow when full or dashing
+        if (pct >= 0.99 || dashState.isDashing) {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ff8c00';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+    }
 
     ctx.restore();
 }

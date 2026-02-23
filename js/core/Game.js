@@ -2,6 +2,7 @@ import { SETTINGS } from './Settings.js';
 import { gameState, editorState, input, GAME_STATE_MODE } from './GameState.js';
 import { lerpAngle, checkCollisionWithRect } from './Utils.js';
 import { buffManager, BUFF_TYPE } from './BuffManager.js';
+import { dashState, tryDash, updateDash, getDashSpeedMultiplier, resetDash } from './DashSystem.js';
 import { player, updateEnergy, consumeEnergy, restoreEnergy, onRevive } from '../entities/Player.js';
 import { FieldObject } from '../entities/FieldObject.js';
 import { Obstacle } from '../entities/Obstacle.js';
@@ -24,6 +25,7 @@ import {
     drawPlayerHPBar,
     drawAimingUI,
     drawHeldItemUI,
+    drawDashGauge,
     getClampedAimPosition
 } from '../rendering/Renderer.js';
 import { updateCamera, applyCameraTransform, restoreCameraTransform, screenToWorld, applyZoom, updateZoom, getAimFollowTarget, startAimFollow, startCameraReturn, resetAimCameraState } from './Camera.js';
@@ -52,9 +54,23 @@ export function initGame() {
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
         if (key.startsWith('arrow')) e.preventDefault();
+        if (key === ' ') e.preventDefault();
         if (player.isDead) return;
         if (key === 'f') enterAimMode();
         if (key === 'r') spawnItem();
+        if (key === ' ') {
+            if (gameState.currentMode === GAME_STATE_MODE.AIMING) {
+                exitAimMode();
+            }
+            let dx = 0, dy = 0;
+            if (input.keys.w) dy -= 1;
+            if (input.keys.s) dy += 1;
+            if (input.keys.a) dx -= 1;
+            if (input.keys.d) dx += 1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len > 0) { dx /= len; dy /= len; }
+            tryDash(dx, dy);
+        }
         if (input.keys.hasOwnProperty(key)) input.keys[key] = true;
     });
 
@@ -403,8 +419,9 @@ function checkItemPickup() {
 function update(deltaTime) {
     // === 死亡狀態處理 ===
     if (player.isDead) {
-        // 確保退出瞄準模式 & 清除移動輸入
+        // 確保退出瞄準模式 & 清除移動輸入 & 重置 dash
         exitAimMode();
+        resetDash();
         input.keys.w = input.keys.a = input.keys.s = input.keys.d = false;
 
         player.deathTimer -= deltaTime;
@@ -469,6 +486,9 @@ function update(deltaTime) {
     // 更新 energy
     updateEnergy(deltaTime);
 
+    // 更新 dash
+    updateDash(deltaTime);
+
     // 編輯器拖曳
     if (editorState.draggingObj) {
         const obj = editorState.draggingObj;
@@ -494,18 +514,23 @@ function update(deltaTime) {
     if (gameState.currentMode === GAME_STATE_MODE.ROAMING) {
         let dx = 0;
         let dy = 0;
-        if (input.keys.w) dy -= 1;
-        if (input.keys.s) dy += 1;
-        if (input.keys.a) dx -= 1;
-        if (input.keys.d) dx += 1;
 
-        const length = Math.sqrt(dx * dx + dy * dy);
-        if (length > 0) {
-            dx /= length;
-            dy /= length;
+        if (dashState.isDashing) {
+            dx = dashState.dashDirX;
+            dy = dashState.dashDirY;
+        } else {
+            if (input.keys.w) dy -= 1;
+            if (input.keys.s) dy += 1;
+            if (input.keys.a) dx -= 1;
+            if (input.keys.d) dx += 1;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            if (length > 0) { dx /= length; dy /= length; }
+        }
+
+        if (dx !== 0 || dy !== 0) {
             player.targetAngle = Math.atan2(dy, dx);
 
-            const moveDist = SETTINGS.playerSpeed * deltaTime;
+            const moveDist = SETTINGS.playerSpeed * getDashSpeedMultiplier() * deltaTime;
             const margin = SETTINGS.playerSize;
             const wallT = SETTINGS.worldConfig.wallThickness;
 
@@ -649,6 +674,7 @@ function draw() {
     } else {
         drawPlayer(ctx);
         drawPlayerHPBar(ctx);
+        drawDashGauge(ctx);
     }
 
     if (!player.isDead && gameState.currentMode === GAME_STATE_MODE.AIMING) {

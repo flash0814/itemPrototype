@@ -44,7 +44,9 @@ export const SETTINGS = {
         meteorGlow: 'rgba(255, 100, 30, 0.6)',
         bomb: '#aa44ff',
         bombDark: '#6622aa',
-        bombExplosion: 'rgba(255, 50, 30, 0.8)'
+        bombExplosion: 'rgba(255, 50, 30, 0.8)',
+        dashGauge: '#ff8c00',
+        dashGaugeBg: 'rgba(255, 140, 0, 0.2)'
     },
 
     general: {
@@ -54,6 +56,16 @@ export const SETTINGS = {
         maxEnergy: 100,
         defEnergy: 100,
         energyRecoverRate: 20
+    },
+
+    dashConfig: {
+        maxEnergy: 100,
+        energyCost: 35,
+        recoveryRate: 20,
+        recoveryDelay: 0.3,
+        speedRatio: 4,
+        dashTime: 0.25,
+        trailInterval: 0.03
     },
 
     deathRevive: {

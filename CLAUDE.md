@@ -27,6 +27,7 @@ js/
     Settings.js          — 所有常量與預設值（SETTINGS 物件）
     Utils.js             — 工具函式（lerpAngle, checkCollisionWithRect）
     BuffManager.js       — Buff 管理系統（統一管理所有 buff 狀態與 icon）
+    DashSystem.js        — Dash 系統（獨立 energy gauge、速度倍率、拖尾粒子）
   entities/
     Player.js            — 玩家狀態（hp, trail, heldItem, invincible 等）
     FieldObject.js       — 場景物件基類
@@ -166,7 +167,7 @@ draw():
   applyCameraTransform(ctx)     ← 世界空間開始
     drawGrid / drawWorldBounds
     fieldObjects / items / projectiles / particles
-    trail / player / HPBar / aimingUI / floatingTexts
+    trail / player / HPBar / DashGauge / aimingUI / floatingTexts
   restoreCameraTransform(ctx)   ← 世界空間結束
   drawHeldItemUI(ctx)           ← 螢幕空間（HUD）
 ```
@@ -336,6 +337,75 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 - 一次只能持有 1 個羽毛 buff，重複撿取不疊加
 - 死亡時若有羽毛 buff → 使用 `reviveItemTime`（def 0）快速復活
 
+## Dash 系統
+
+### 操作
+
+- **Space** — 往目前 WASD 方向 dash（靜止時往 `player.currentAngle` 面朝方向）
+- **AIMING 中按 Space** — 中斷瞄準（不丟出 item，保持持有）→ 立即 dash
+- Dash 中方向鎖定，不受 WASD 影響
+
+### 架構
+
+- **DashSystem.js** — 獨立 singleton module（同 BuffManager 模式）
+- 狀態存於 `dashState`（不在 GameState 中），避免中央 store 膨脹
+- 每幀由 `Game.js` 呼叫 `updateDash(dt)` 更新
+
+### 設定參數
+
+```js
+SETTINGS.dashConfig = {
+    maxEnergy: 100,        // dash gauge 最大值
+    energyCost: 35,        // 每次 dash 消耗
+    recoveryRate: 20,      // 每秒回復量
+    recoveryDelay: 0.3,    // dash 結束後延遲回復（秒）
+    speedRatio: 4,         // playerSpeed 倍率
+    dashTime: 0.25,        // dash 持續時間（秒）
+    trailInterval: 0.03    // 拖尾粒子生成間隔（秒）
+}
+```
+
+### Dash Energy
+
+- `dashEnergy` / `displayDashEnergy` — 實際值 / smooth 顯示值（lerp 追趕）
+- `recoveryDelayTimer` — dash 結束後延遲倒數，歸零後開始自動回復
+- 與 Player energy 完全獨立，不互相影響
+
+### API（DashSystem.js）
+
+| 函式 | 用途 |
+|------|------|
+| `canDash()` | 檢查條件：(ROAMING or AIMING) + 未死亡 + 未在 dash + energy 足夠 |
+| `tryDash(dirX, dirY)` | 扣 energy、鎖定方向、啟動 dash timer |
+| `updateDash(dt)` | 每幀：dash 計時 + 粒子生成 + 回復延遲 + energy 回復 + display lerp |
+| `getDashSpeedMultiplier()` | dashing 中回傳 speedRatio，否則 1 |
+| `resetDash()` | 完全重置（死亡時呼叫） |
+
+### 移動整合
+
+```
+ROAMING block:
+  if (isDashing) → dx,dy = locked dashDir（鎖定方向）
+  else → dx,dy from WASD input
+
+  moveDist = playerSpeed * getDashSpeedMultiplier() * dt
+  碰撞判定不變（軸分離、同 collisionMask）
+```
+
+### HUD — Dash Gauge
+
+- 位置：玩家左側（世界空間，跟隨玩家 + damage shake）
+- 形狀：半橢圓弧（弧度朝左），x=-28，垂直 gaugeRY=18
+- 顏色：底部暗橘 `#cc6600` → 頂部亮橘 `#ffaa00` 漸層
+- 背景軌道：`dashGaugeBg`（半透明橘）
+- 滿量或 dashing 時有 glow 效果（`shadowBlur: 8`）
+
+### 拖尾粒子
+
+- 類型：`'dash'`（Particle.js，需 `context` 參數傳入方向）
+- 每 30ms 生成 3 顆，青色 `#00f3ff`，反向飄散
+- 大小 5-10px，壽命 0.5-0.8s
+
 ## 道具系統
 
 ### 分類
@@ -411,6 +481,7 @@ grounding 閾值為 `|vz| < 50`（ItemBase），HealBox 自身物理閾值為 `|
 | HP bar | 48×6 | 位於 y = -playerSize - 15 |
 | Energy bar | 48×5 | HP 正下方 +3px |
 | Buff icons | 22px (不隨 player 縮放) | HP bar 上方 -17px |
+| Dash gauge | 半橢圓弧 RX=6, RY=18 | 玩家左側 x=-28，弧朝左 |
 | 死亡碎片/復活效果 | 使用 playerSize | 自動等比縮放 |
 | 地面道具 icon | perspectiveScale * 1.5 | 放大 50% |
 

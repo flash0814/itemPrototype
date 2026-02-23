@@ -1,5 +1,5 @@
 export class Particle {
-    constructor(x, y, type = 'heal') {
+    constructor(x, y, type = 'heal', context = null) {
         this.x = x + (Math.random() - 0.5) * 20;
         this.y = y + (Math.random() - 0.5) * 20;
         this.type = type;
@@ -47,6 +47,14 @@ export class Particle {
             this.size = 2 + Math.random() * 3;
             this.color = '#00f3ff';
             this.life = 0.4 + Math.random() * 0.3;
+        } else if (type === 'dash') {
+            const dirX = context?.dirX || 0;
+            const dirY = context?.dirY || 0;
+            this.vx = -dirX * 80 + (Math.random() - 0.5) * 50;
+            this.vy = -dirY * 80 + (Math.random() - 0.5) * 50;
+            this.size = 5 + Math.random() * 5;
+            this.color = '#00f3ff';
+            this.life = 0.5 + Math.random() * 0.3;
         } else {
             // heal
             this.vx = (Math.random() - 0.5) * 30;
