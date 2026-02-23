@@ -65,7 +65,7 @@ export const SETTINGS = {
         recoveryDelay: 0.35,
         dashCD: 0.15,
         speedRatio: 4,
-        dashTime: 0.25,
+        dashTime: 0.15,
         trailInterval: 0.03
     },
 
