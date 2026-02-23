@@ -357,8 +357,9 @@ BuffManager 會同步 `player.invincibleTimer`、`player.reviveBlinkTimer` 等�
 SETTINGS.dashConfig = {
     maxEnergy: 100,        // dash gauge 最大值
     energyCost: 35,        // 每次 dash 消耗
-    recoveryRate: 20,      // 每秒回復量
-    recoveryDelay: 0.3,    // dash 結束後延遲回復（秒）
+    recoveryRate: 25,      // 每秒回復量
+    recoveryDelay: 0.35,   // dash 結束後延遲回復（秒）
+    dashCD: 0.15,          // dash 結束後冷卻時間（秒），CD 內不可再 dash
     speedRatio: 4,         // playerSpeed 倍率
     dashTime: 0.25,        // dash 持續時間（秒）
     trailInterval: 0.03    // 拖尾粒子生成間隔（秒）
@@ -369,6 +370,7 @@ SETTINGS.dashConfig = {
 
 - `dashEnergy` / `displayDashEnergy` — 實際值 / smooth 顯示值（lerp 追趕）
 - `recoveryDelayTimer` — dash 結束後延遲倒數，歸零後開始自動回復
+- `dashCDTimer` — dash 結束後冷卻倒數，歸零前 `canDash()` 回傳 false
 - 與 Player energy 完全獨立，不互相影響
 
 ### API（DashSystem.js）

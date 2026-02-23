@@ -11,6 +11,7 @@ export const dashState = {
     dashEnergy: SETTINGS.dashConfig.maxEnergy,
     displayDashEnergy: SETTINGS.dashConfig.maxEnergy,
     recoveryDelayTimer: 0,
+    dashCDTimer: 0,
     dashTrailTimer: 0
 };
 
@@ -19,6 +20,7 @@ export function canDash() {
             gameState.currentMode === GAME_STATE_MODE.AIMING)
         && !player.isDead
         && !dashState.isDashing
+        && dashState.dashCDTimer <= 0
         && dashState.dashEnergy >= SETTINGS.dashConfig.energyCost;
 }
 
@@ -63,7 +65,12 @@ export function updateDash(dt) {
             dashState.isDashing = false;
             dashState.dashTimer = 0;
             dashState.recoveryDelayTimer = cfg.recoveryDelay;
+            dashState.dashCDTimer = cfg.dashCD;
         }
+    }
+
+    if (!dashState.isDashing && dashState.dashCDTimer > 0) {
+        dashState.dashCDTimer -= dt;
     }
 
     if (!dashState.isDashing && dashState.recoveryDelayTimer > 0) {
@@ -96,5 +103,6 @@ export function resetDash() {
     dashState.dashEnergy = cfg.maxEnergy;
     dashState.displayDashEnergy = cfg.maxEnergy;
     dashState.recoveryDelayTimer = 0;
+    dashState.dashCDTimer = 0;
     dashState.dashTrailTimer = 0;
 }

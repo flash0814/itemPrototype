@@ -61,8 +61,9 @@ export const SETTINGS = {
     dashConfig: {
         maxEnergy: 100,
         energyCost: 35,
-        recoveryRate: 20,
-        recoveryDelay: 0.3,
+        recoveryRate: 25,
+        recoveryDelay: 0.35,
+        dashCD: 0.15,
         speedRatio: 4,
         dashTime: 0.25,
         trailInterval: 0.03
